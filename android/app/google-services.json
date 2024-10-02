@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "476096646973",
+    "project_id": "motion-app-6498b",
+    "storage_bucket": "motion-app-6498b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:476096646973:android:cf8595ba350ad2b72e7f54",
+        "android_client_info": {
+          "package_name": "com.example.motion_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgsAc4FFMRC7aygqkFSpiMj3LFVyBMf7c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
