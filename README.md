@@ -30,4 +30,4 @@ If you are new to Flutter, here are some resources to help you get started:
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/ndjek1/motion-app.git
