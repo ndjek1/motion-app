@@ -58,6 +58,16 @@ class _SignInState extends State<SignIn> {
                   key: _formKey,
                   child: Column(
                     children: [
+                      const Center(
+                        child: Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24.0,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 20.0),
                       TextFormField(
                           decoration: textInputDecoration.copyWith(

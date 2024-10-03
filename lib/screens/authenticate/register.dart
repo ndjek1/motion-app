@@ -51,12 +51,23 @@ class _RegisterState extends State<Register> {
               ],
             ),
             body: Container(
+              
                 padding: const EdgeInsets.symmetric(
                     vertical: 20.0, horizontal: 50.0),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     children: [
+                      const Center(
+                        child: Text(
+                          'Register',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24.0,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 20.0),
                       SizedBox(
                         width: double.infinity,
