@@ -19,6 +19,7 @@ class _RegisterState extends State<Register> {
   //text field state
   String password = '';
   String email = '';
+   String displayName = '';
   String error = '';
   @override
   Widget build(BuildContext context) {
@@ -51,7 +52,6 @@ class _RegisterState extends State<Register> {
               ],
             ),
             body: Container(
-              
                 padding: const EdgeInsets.symmetric(
                     vertical: 20.0, horizontal: 50.0),
                 child: Form(
@@ -67,6 +67,19 @@ class _RegisterState extends State<Register> {
                             color: Colors.white,
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextFormField(
+                            decoration: textInputDecoration.copyWith(
+                              hintText: 'Display name',
+                            ),
+                            validator: (val) =>
+                                val!.isEmpty ? 'Enter a display name' : null,
+                            onChanged: (value) => {
+                              setState(() => displayName = value)
+                            }),
                       ),
                       const SizedBox(height: 20.0),
                       SizedBox(
@@ -112,7 +125,7 @@ class _RegisterState extends State<Register> {
                               print('loading');
                               dynamic ressult =
                                   await _auth.registerWithEmailAndPassword(
-                                      email, password);
+                                      email, password,displayName);
                               if (ressult == null) {
                                 setState(() {
                                   error = 'Please enter a valid email';

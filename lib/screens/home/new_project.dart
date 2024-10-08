@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:motion_app/models/project.dart';
-import 'package:motion_app/services/local_storage.dart';
+import 'package:motion_app/services/database.dart';
+import 'package:uuid/uuid.dart';
 
 class NewProjectScreen extends StatefulWidget {
   @override
@@ -11,20 +13,25 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
   final _formKey = GlobalKey<FormState>();
   String _title = '';
   String _description = '';
+  final Uuid _uuid = Uuid(); // Initialize UUID generator
 
-  // Initialize the LocalStorageService
-  final LocalStorageService _localStorageService = LocalStorageService();
-  List<Project> _currentProjects = [];
+  bool _isFreeUser = true; // Default to free user
+  User? user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
     super.initState();
-    _loadCurrentProjects();
+    _checkUserPlan(); // Check if the current user is free or pro
   }
 
-  // Load the existing projects
-  Future<void> _loadCurrentProjects() async {
-    _currentProjects = await _localStorageService.loadProjects();
+  Future<void> _checkUserPlan() async {
+    if (user != null) {
+      bool isFreeUser =
+          await DatabaseService(uid: user!.uid).isFreeUser(user!.uid);
+      setState(() {
+        _isFreeUser = isFreeUser;
+      });
+    }
   }
 
   @override
@@ -69,16 +76,24 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
-
+                    String projectId = _uuid.v4();
+                    // Get the current time
+                    DateTime createdAt = DateTime.now();
                     // Create a new Project object
-                    Project newProject =
-                        Project(title: _title, description: _description);
+                    Project newProject = Project(
+                        id: projectId,
+                        title: _title,
+                        description: _description);
 
-                    // Save the project using LocalStorageService
-                    await _localStorageService.saveProject(
-                        newProject, _currentProjects);
-                    print("Project saved");
-
+                    DatabaseService(uid: user!.uid).updateProjectData(
+                        projectId,
+                        _title,
+                        _description,
+                        user!.uid,
+                        createdAt.toString(),
+                        null,
+                        null,
+                        null);
                     // Navigate back and pass the new project
                     Navigator.pop(context, newProject);
                   }
