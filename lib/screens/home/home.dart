@@ -19,14 +19,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final AuthService _auth = AuthService();
   final LocalStorageService _localStorageService = LocalStorageService();
   List<Project> _projects = [];
-
   bool _isFreeUser = true; // Default to free user
   User? user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
     super.initState();
-    _checkUserPlan(); // Check if the current user is free or pro
+    _checkUserPlan();
     _loadProjects();
   }
 
@@ -59,95 +58,136 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue[400],
-        elevation: 0.0,
+        backgroundColor: Colors.indigo[600],
+        elevation: 0,
+        title: Text(
+          'Projects',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+        ),
         actions: [
-          TextButton.icon(
-            onPressed: () async {
-              await _auth.signOut();
-            },
-            icon: const Icon(Icons.logout, color: Colors.white),
-            label: const Text(
-              'Signout',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-          TextButton.icon(
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => SettingsPage()),
               );
             },
-            icon: const Icon(Icons.person, color: Colors.white),
-            label: const Text(
-              'Settings',
-              style: TextStyle(color: Colors.white),
-            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: () async {
+              await _auth.signOut();
+            },
           ),
         ],
       ),
-      body: Column(
+      body: _projects.isEmpty ? _buildEmptyState() : _buildProjectList(context),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => NewProjectScreen()),
+          );
+        },
+        backgroundColor: Colors.indigo[600],
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Center(
-            heightFactor: 2,
-            child: ElevatedButton(
-              onPressed: () {
-                // Navigate to project creation screen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => NewProjectScreen()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                textStyle: const TextStyle(fontSize: 20),
-              ),
-              child: const Text('+ New Project',
-                  style: TextStyle(color: Colors.white)),
+          Icon(Icons.folder_open, size: 100, color: Colors.grey[400]),
+          const SizedBox(height: 20),
+          Text(
+            'No projects yet!',
+            style: TextStyle(
+              fontSize: 20,
+              color: Colors.grey[600],
             ),
           ),
-          Expanded(
-            child: _projects.isEmpty
-                ? const Center(
-                    child:
-                        Text('No projects yet! Tap + New Project to add one.'),
-                  )
-                : ListView.builder(
-                    itemCount: _projects.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(_projects[index].title),
-                        subtitle: Text(_projects[index].description),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.more_vert),
-                          onPressed: () {
-                            print(_projects[index].id);
-                          },
-                        ),
-                        onTap: () {
-                          if (_projects[index].id.isNotEmpty) {
-                            // Check if the project ID is not empty
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProjectDetailsWidget(
-                                    projectId: _projects[index].id),
-                              ),
-                            );
-                          } else {
-                            print(
-                                'Error: Project ID is empty.'); // Debug output
-                          }
-                        },
-                      );
-                    },
-                  ),
+          const SizedBox(height: 10),
+          Text(
+            'Tap + to create your first project.',
+            style: TextStyle(color: Colors.grey[500]),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildProjectList(BuildContext context) {
+    return StreamBuilder<List<Project>>(
+      stream: DatabaseService(uid: user!.uid).getProjectStream(user!.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return const Center(child: Text('Error fetching projects.'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return _buildEmptyState();
+        } else {
+          List<Project> projects = snapshot.data!;
+          return ListView.builder(
+            padding: const EdgeInsets.all(8),
+            itemCount: projects.length,
+            itemBuilder: (context, index) {
+              return Card(
+                elevation: 3,
+                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(16),
+                  title: Text(
+                    projects[index].title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  subtitle: Text(
+                    projects[index].description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.more_vert),
+                    onPressed: () {
+                      _showProjectActions(context, projects[index]);
+                    },
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ProjectDetailsWidget(projectId: projects[index].id),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        }
+      },
+    );
+  }
+
+  void _showProjectActions(BuildContext context, Project project) {
+    // Define actions like edit, delete, etc. for projects.
   }
 }

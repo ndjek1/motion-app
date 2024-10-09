@@ -6,6 +6,16 @@ class MyUser {
   bool freeUser = false;
 
   MyUser({this.uid, this.email, this.displayName});
+
+  // Factory constructor to create a Project from Firestore document
+  factory MyUser.fromFirestore(Map<String, dynamic> data) {
+    return MyUser(
+      uid: data['userId'] ?? '',
+      email: data['email'] ?? '',
+      displayName: data['displayName'] ?? '',
+      // Initialize other fields here
+    );
+  }
 }
 
 

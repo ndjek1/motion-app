@@ -48,7 +48,7 @@ class Task {
   final String description;
   final String projectId; // ID of the related project
   final String assignedTo; // User ID of the assigned collaborator
-  final String status; // E.g., 'open', 'in-progress', 'completed'
+  String status; // E.g., 'open', 'in-progress', 'completed'
   final DateTime dueDate;
   final DateTime createdAt;
 
@@ -62,6 +62,23 @@ class Task {
     required this.dueDate,
     required this.createdAt,
   });
+
+  // Factory constructor to create a Project from Firestore document
+  factory Task.fromFirestore(Map<String, dynamic> data) {
+    return Task(
+      id: data['taskId'] ?? '',
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      projectId: data['projectId'] ?? '',
+      assignedTo: data['assignedTo'] ?? '',
+      status: data['status'] ?? '',
+      createdAt: (data['createdAt'] as Timestamp)
+          .toDate(), // Convert Timestamp to DateTime
+      dueDate: (data['dueDate'] as Timestamp).toDate(),
+
+      // Initialize other fields here
+    );
+  }
 }
 
 class Comment {
@@ -79,7 +96,6 @@ class Comment {
     required this.createdAt,
   });
 }
-
 
 class Invitation {
   final String id;

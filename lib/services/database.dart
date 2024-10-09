@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:motion_app/models/project.dart';
-
+import 'package:motion_app/models/user.dart';
 
 class DatabaseService {
   final String? uid;
@@ -13,6 +14,8 @@ class DatabaseService {
       FirebaseFirestore.instance.collection("projects");
   final CollectionReference invitationsCollection =
       FirebaseFirestore.instance.collection("invitations");
+  final CollectionReference tasksCollection =
+      FirebaseFirestore.instance.collection("tasks");
 
   Future<void> updateUserData(String? uid, String? email, String? displayName,
       String? isFreeUser) async {
@@ -53,6 +56,33 @@ class DatabaseService {
     }
   }
 
+  Future<void> updateTaskData(
+    String? id,
+    String title,
+    String description,
+    String? projectId,
+    String? assignedTo,
+    String? status,
+    DateTime createdAt,
+    DateTime dueDate,
+  ) async {
+    if (id != null) {
+      await tasksCollection.doc(id).set({
+        'taskId': id,
+        'title': title,
+        'description': description,
+        'projectId': projectId,
+        'assignedTo': assignedTo,
+        'createdAt': createdAt,
+        'status': status,
+        'dueDate': dueDate,
+      });
+      print('Task added');
+    } else {
+      throw Exception("task  ID cannot be null");
+    }
+  }
+
   Future<bool> isFreeUser(String uid) async {
     try {
       DocumentSnapshot userDoc = await userCollection.doc(uid).get();
@@ -88,6 +118,103 @@ class DatabaseService {
       return userProjects;
     } catch (e) {
       print('Error fetching user projects: $e');
+      return [];
+    }
+  }
+
+  Stream<List<Project>> getProjectStream(String uid) {
+    return projectCollection
+        .where('ownerId',
+            isEqualTo: uid) // Assuming you're filtering by the user
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) =>
+                Project.fromFirestore(doc.data() as Map<String, dynamic>))
+            .toList());
+  }
+
+  Stream<List<Task>> getTasksStream(String pid) {
+    return tasksCollection
+        .where('projectId',
+            isEqualTo: pid) // Assuming you're filtering by the user
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map(
+                (doc) => Task.fromFirestore(doc.data() as Map<String, dynamic>))
+            .toList());
+  }
+
+  Future<List<Task>> getProjectTasks(String projectId) async {
+    try {
+      // Reference to the projects collection
+
+      // Query to get projects where ownerId matches the current user ID
+      QuerySnapshot querySnapshot =
+          await tasksCollection.where('projectId', isEqualTo: projectId).get();
+
+      // Convert the documents to a list of Project objects
+      List<Task> projectTasks = querySnapshot.docs.map((doc) {
+        return Task.fromFirestore(doc.data() as Map<String, dynamic>);
+      }).toList();
+      print(" project id ${projectTasks[1].id} ");
+
+      return projectTasks;
+    } catch (e) {
+      print('Error fetching user projects: $e');
+      return [];
+    }
+  }
+
+  Future<void> updateTaskStatus(String taskId, String newStatus) async {
+    try {
+      await tasksCollection // Replace with your tasks collection name
+          .doc(taskId)
+          .update({'status': newStatus});
+    } catch (e) {
+      print(taskId);
+      print('Error updating task status: $e');
+    }
+  }
+
+  Future<List<MyUser>> fetchCollaborators(String projectId) async {
+    try {
+      // Reference to the projects collection
+      DocumentSnapshot projectDoc =
+          await projectCollection.doc(projectId).get();
+
+      // Ensure that the project document exists
+      if (!projectDoc.exists) {
+        print('Project not found');
+        return [];
+      }
+
+      // Fetch the collaborator IDs from the project document
+      List<String> collaboratorIds =
+          List<String>.from(projectDoc['collaboratorIds']);
+
+      // If there are no collaborators, return an empty list
+      if (collaboratorIds.isEmpty) {
+        print('No collaborators found');
+        return [];
+      }
+
+      // Fetch user documents for each collaborator ID
+      List<MyUser> collaborators = [];
+      for (String collaboratorId in collaboratorIds) {
+        DocumentSnapshot userDoc =
+            await userCollection.doc(collaboratorId).get();
+        if (userDoc.exists) {
+          // Assuming User.fromFirestore is defined to create a User object from Firestore data
+          collaborators.add(
+              MyUser.fromFirestore(userDoc.data() as Map<String, dynamic>));
+        } else {
+          print('User not found for ID: $collaboratorId');
+        }
+      }
+
+      return collaborators; // Return the list of collaborators
+    } catch (e) {
+      print('Error fetching collaborators: $e');
       return [];
     }
   }
