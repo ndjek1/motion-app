@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class Project {
   final String id;
@@ -95,6 +96,21 @@ class Comment {
     required this.projectId,
     required this.createdAt,
   });
+
+
+  // Factory constructor to create a Project from Firestore document
+  factory Comment.fromFirestore(Map<String, dynamic> data) {
+    return Comment(
+      id: data['taskId'] ?? '',
+      content: data['content'] ?? '',
+      userId: data['userId'] ?? '',
+      projectId: data['projectId'] ?? '',
+      createdAt: (data['createdAt'] as Timestamp)
+          .toDate(), // Convert Timestamp to DateTime
+
+      // Initialize other fields here
+    );
+  }
 }
 
 class Invitation {

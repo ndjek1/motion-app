@@ -19,6 +19,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final AuthService _auth = AuthService();
   final LocalStorageService _localStorageService = LocalStorageService();
   List<Project> _projects = [];
+  List<Project> _invitedProjects = [];
+
   bool _isFreeUser = true; // Default to free user
   User? user = FirebaseAuth.instance.currentUser;
 
@@ -40,10 +42,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadProjects() async {
-    List<Project> loadedProjects =
+    // Fetch owned projects
+    List<Project> ownedProjects =
         await DatabaseService(uid: user!.uid).getUserProjects(user!.uid);
+
+    // Fetch invited projects
+    List<Project> invitedProjects =
+        await DatabaseService(uid: user!.uid).getUserInvitedProjects(user!.uid);
+
+    // Combine them in the state
     setState(() {
-      _projects = loadedProjects;
+      _projects = ownedProjects;
+      _invitedProjects = invitedProjects; // Add this new list
     });
   }
 
@@ -60,10 +70,12 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.indigo[600],
         elevation: 0,
-        title: Text(
+        title: const Text(
           'Projects',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+          style: TextStyle(
+              fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white),
         ),
+        leading: const Icon(Icons.menu, color: Colors.white),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
@@ -124,66 +136,132 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProjectList(BuildContext context) {
-    return StreamBuilder<List<Project>>(
-      stream: DatabaseService(uid: user!.uid).getProjectStream(user!.uid),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return const Center(child: Text('Error fetching projects.'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildEmptyState();
-        } else {
-          List<Project> projects = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: projects.length,
-            itemBuilder: (context, index) {
-              return Card(
-                elevation: 3,
-                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  title: Text(
-                    projects[index].title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  subtitle: Text(
-                    projects[index].description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.more_vert),
-                    onPressed: () {
-                      _showProjectActions(context, projects[index]);
-                    },
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ProjectDetailsWidget(projectId: projects[index].id),
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              'Your Projects',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          _projects.isEmpty
+              ? _buildEmptyState()
+              : ListView.builder(
+                  shrinkWrap: true, // To avoid scroll conflicts
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _projects.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      elevation: 3,
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.note,
+                          size: 40.0,
+                          color: Colors.indigo,
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                        title: Text(
+                          _projects[index].title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        subtitle: Text(
+                          _projects[index].description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProjectDetailsWidget(
+                                  projectId: _projects[index].id),
+                            ),
+                          );
+                        },
                       ),
                     );
                   },
                 ),
-              );
-            },
-          );
-        }
-      },
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              'Invited Projects',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          _invitedProjects.isEmpty
+              ? const Center(child: Text('No invited projects yet.'))
+              : ListView.builder(
+                  shrinkWrap: true, // To avoid scroll conflicts
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _invitedProjects.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      elevation: 3,
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.note,
+                          size: 40.0,
+                          color: Colors.indigo,
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                        title: Text(
+                          _invitedProjects[index].title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        subtitle: Text(
+                          _invitedProjects[index].description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProjectDetailsWidget(
+                                  projectId: _invitedProjects[index].id),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+        ],
+      ),
     );
   }
 

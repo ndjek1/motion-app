@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:motion_app/models/project.dart';
 import 'package:motion_app/models/user.dart';
 
@@ -16,6 +15,8 @@ class DatabaseService {
       FirebaseFirestore.instance.collection("invitations");
   final CollectionReference tasksCollection =
       FirebaseFirestore.instance.collection("tasks");
+  final CollectionReference commentsCollection =
+      FirebaseFirestore.instance.collection("comments");
 
   Future<void> updateUserData(String? uid, String? email, String? displayName,
       String? isFreeUser) async {
@@ -83,6 +84,47 @@ class DatabaseService {
     }
   }
 
+  Future<void> updateProjectComments(
+    String? id,
+    String content,
+    String userId,
+    String? projectId,
+    DateTime createdAt,
+  ) async {
+    if (id != null) {
+      await commentsCollection.doc(id).set({
+        'id': id,
+        'content': content,
+        'userId': userId,
+        'projectId': projectId,
+        'createdAt': createdAt,
+      });
+      print('Comment added');
+    } else {
+      throw Exception("task  ID cannot be null");
+    }
+  }
+
+  // Fetch comments related to a project and return them in reverse order
+  Stream<List<Comment>> getProjectComments(String projectId) {
+    Stream<List<Comment>> comments = commentsCollection
+        .where('projectId', isEqualTo: projectId)
+        .orderBy('createdAt', descending: true) // Fetch in descending order
+        .snapshots()
+        .map((snapshot) {
+      // Reverse the list and convert it back to List<Comment>
+      return snapshot.docs
+          .map((doc) {
+            return Comment.fromFirestore(doc.data() as Map<String, dynamic>);
+          })
+          .toList()
+          .reversed
+          .toList(); // Reverse and convert to list
+    });
+
+    return comments;
+  }
+
   Future<bool> isFreeUser(String uid) async {
     try {
       DocumentSnapshot userDoc = await userCollection.doc(uid).get();
@@ -118,6 +160,23 @@ class DatabaseService {
       return userProjects;
     } catch (e) {
       print('Error fetching user projects: $e');
+      return [];
+    }
+  }
+
+  Future<List<Project>> getUserInvitedProjects(String currentUserId) async {
+    try {
+      QuerySnapshot querySnapshot = await projectCollection
+          .where('collaboratorIds', arrayContains: currentUserId)
+          .get();
+
+      List<Project> invitedProjects = querySnapshot.docs.map((doc) {
+        return Project.fromFirestore(doc.data() as Map<String, dynamic>);
+      }).toList();
+
+      return invitedProjects;
+    } catch (e) {
+      print('Error fetching invited projects: $e');
       return [];
     }
   }

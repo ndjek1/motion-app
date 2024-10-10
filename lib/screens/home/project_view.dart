@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:motion_app/models/project.dart';
 import 'package:motion_app/models/user.dart';
+import 'package:motion_app/screens/home/comment.dart';
 import 'package:motion_app/screens/home/invitation.dart';
 import 'package:motion_app/screens/home/task_form.dart';
 import 'package:motion_app/services/database.dart';
@@ -37,23 +38,47 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
         } else if (snapshot.hasError) {
           return const Center(child: Text('Error fetching project details.'));
         } else if (!snapshot.hasData) {
-          return const Center(child: Text('Project not found.'));
+          return const Center(
+              child: Text(
+            'Project not found.',
+          ));
         } else {
           Project project = snapshot.data!;
 
           return Scaffold(
             appBar: AppBar(
-              title: Text(project.title, style: const TextStyle(fontSize: 24)),
+              title: Text(project.title,
+                  style: const TextStyle(fontSize: 24, color: Colors.white)),
               backgroundColor: Colors.blueAccent,
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.person_add),
+                  icon: const Icon(
+                    Icons.person_add,
+                    color: Colors.white,
+                  ),
                   onPressed: () async {
                     showDialog(
                       context: context,
                       builder: (context) => SendInvitationWidget(
                         projectId: project.id,
                         projectName: project.title,
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.comment,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CommentScreen(
+                          projectId: widget
+                              .projectId, // Pass project ID to the comment screen
+                        ),
                       ),
                     );
                   },
@@ -114,6 +139,9 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                                   subtitle: Text(task.description),
                                   trailing: Checkbox(
                                     value: isCompleted,
+                                    checkColor: Colors.indigo,
+                                    fillColor: const WidgetStatePropertyAll(
+                                        Colors.white),
                                     onChanged: (bool? value) async {
                                       // Toggle task completion status
                                       String newStatus =
