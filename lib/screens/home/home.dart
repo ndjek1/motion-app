@@ -1,9 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:motion_app/models/project.dart';
+import 'package:motion_app/screens/home/invitations_list.dart';
 import 'package:motion_app/screens/home/new_project.dart';
+import 'package:motion_app/screens/home/profile.dart';
 import 'package:motion_app/screens/home/project_view.dart';
-import 'package:motion_app/screens/home/settings.dart';
 import 'package:motion_app/services/auth.dart';
 import 'package:motion_app/services/database.dart';
 import 'package:motion_app/services/local_storage.dart';
@@ -75,17 +76,68 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(
               fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white),
         ),
-        leading: const Icon(Icons.menu, color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () {
+        leading: PopupMenuButton<int>(
+          icon: const Icon(Icons.menu, color: Colors.white), // The menu icon
+          onSelected: (value) {
+            // Handle the selected menu item here
+            if (value == 1) {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => SettingsPage()),
+                MaterialPageRoute(builder: (context) => const ProfileWidget()),
               );
-            },
-          ),
+            } else if (value == 2) {
+              print("Privacy selected");
+            } else if (value == 3) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => InvitationListWidget()),
+              );
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+            const PopupMenuItem<int>(
+              value: 1, // Assign a value to the first option
+              child: Row(
+                children: [
+                  Icon(Icons.person),
+                  SizedBox(width: 8), // Add space between the icon and text
+                  Text('Profile'),
+                ],
+              ),
+            ),
+            const PopupMenuItem<int>(
+              value: 2, // Assign a value to the second option
+              child: Row(
+                children: [
+                  Icon(Icons.lock),
+                  SizedBox(width: 8),
+                  Text('Privacy'),
+                ],
+              ),
+            ),
+            const PopupMenuItem<int>(
+              value: 3, // Assign a value to the third option
+              child: Row(
+                children: [
+                  Icon(Icons.notifications),
+                  SizedBox(width: 8),
+                  Text('Notifications'),
+                ],
+              ),
+            ),
+            const PopupMenuItem<int>(
+              value: 3, // Assign a value to the third option
+              child: Row(
+                children: [
+                  Icon(Icons.settings),
+                  SizedBox(width: 8),
+                  Text('Settings'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () async {

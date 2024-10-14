@@ -1,16 +1,18 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:motion_app/models/project.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:motion_app/models/user.dart';
-import 'package:motion_app/services/database.dart'; // Ensure this is the correct import for your User model
+import 'package:motion_app/models/project.dart'; // Import Task model
+import 'package:motion_app/models/user.dart'; // Import User model
+import 'package:motion_app/services/database.dart'; // Database service for Firebase
 
 class TaskForm extends StatefulWidget {
-  final Function(Task) onCreateTask; // Callback to send the task data
+  final Function(Task) onSubmitTask;
   final List<MyUser> collaborators;
-  User? user = FirebaseAuth.instance.currentUser;
+  final Task? task; // Task to edit, or null if creating a new task
+  final User? user = FirebaseAuth.instance.currentUser;
 
-  TaskForm({required this.onCreateTask, required this.collaborators});
+  TaskForm(
+      {required this.onSubmitTask, required this.collaborators, this.task});
 
   @override
   _TaskFormState createState() => _TaskFormState();
@@ -18,54 +20,64 @@ class TaskForm extends StatefulWidget {
 
 class _TaskFormState extends State<TaskForm> {
   final _formKey = GlobalKey<FormState>();
-  String _title = '';
-  String _description = '';
-  String _assignedTo = '';
-  String _status = 'open';
-  DateTime _dueDate = DateTime.now();
+  late String _title;
+  late String _description;
+  late String _assignedTo;
+  late String _status;
+  late DateTime _dueDate;
+
+  @override
+  void initState() {
+    super.initState();
+    // If editing a task, initialize with its values; otherwise use defaults
+    _title = widget.task?.title ?? '';
+    _description = widget.task?.description ?? '';
+    _assignedTo = widget.task?.assignedTo ?? '';
+    _status = widget.task?.status ?? 'Pending';
+    _dueDate = widget.task?.dueDate ?? DateTime.now();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(20.0),
       child: SingleChildScrollView(
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Create New Task',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Center(
+                child: Text(
+                  widget.task == null ? 'Create Task' : 'Edit Task',
+                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                      fontWeight: FontWeight.bold, color: Colors.deepPurple),
+                ),
               ),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Task Title'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _title = value!;
-                },
+              const SizedBox(height: 20),
+              _buildTextField(
+                label: 'Task Title',
+                hint: 'Enter task title',
+                initialValue: _title,
+                onSave: (value) => _title = value!,
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter a task title' : null,
               ),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Description'),
+              _buildTextField(
+                label: 'Description',
+                hint: 'Enter task description',
+                initialValue: _description,
+                onSave: (value) => _description = value!,
                 maxLines: 3,
-                onSaved: (value) {
-                  _description = value!;
-                },
               ),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'Assigned To'),
+              _buildDropdown(
+                label: 'Assigned To',
                 value: _assignedTo.isNotEmpty ? _assignedTo : null,
                 items: widget.collaborators.map((collaborator) {
                   return DropdownMenuItem(
-                    value: collaborator
-                        .uid, // Assuming MyUser has an 'id' property
-                    child: Text(collaborator.displayName ??
-                        collaborator.email!), // Display the collaborator's name
+                    value: collaborator.uid,
+                    child:
+                        Text(collaborator.displayName ?? collaborator.email!),
                   );
                 }).toList(),
                 onChanged: (value) {
@@ -73,17 +85,12 @@ class _TaskFormState extends State<TaskForm> {
                     _assignedTo = value!;
                   });
                 },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select a collaborator';
-                  }
-                  return null;
-                },
               ),
-              DropdownButtonFormField<String>(
+              _buildDropdown(
+                label: 'Status',
                 value: _status,
                 items: ['Pending', 'Completed'].map((status) {
-                  return DropdownMenuItem(
+                  return DropdownMenuItem<String>(
                     value: status,
                     child: Text(status),
                   );
@@ -93,49 +100,37 @@ class _TaskFormState extends State<TaskForm> {
                     _status = value!;
                   });
                 },
-                decoration: InputDecoration(labelText: 'Status'),
               ),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Due Date',
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.calendar_today),
-                    onPressed: () async {
-                      DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: _dueDate,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2100),
+              _buildDatePicker(
+                label: 'Due Date',
+                selectedDate: _dueDate,
+                onDatePicked: (pickedDate) {
+                  setState(() {
+                    _dueDate = pickedDate!;
+                  });
+                },
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      _formKey.currentState!.save();
+
+                      Task newTask = Task(
+                        id: widget.task?.id ?? DateTime.now().toString(),
+                        title: _title,
+                        description: _description,
+                        projectId: widget.task?.projectId ??
+                            'project_id', // Ensure projectId is set
+                        assignedTo: _assignedTo,
+                        status: _status,
+                        dueDate: _dueDate,
+                        createdAt: widget.task?.createdAt ?? DateTime.now(),
                       );
-                      if (pickedDate != null) {
-                        setState(() {
-                          _dueDate = pickedDate;
-                        });
-                      }
-                    },
-                  ),
-                ),
-                readOnly: true,
-                controller: TextEditingController(
-                    text: DateFormat('yyyy-MM-dd').format(_dueDate)),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () async{
-                  if (_formKey.currentState!.validate()) {
-                    _formKey.currentState!.save();
-                    // Create the new Task object
-                    Task newTask = Task(
-                      id: DateTime.now().toString(),
-                      title: _title,
-                      description: _description,
-                      projectId: 'project_id', // Use the actual project ID
-                      assignedTo: _assignedTo,
-                      status: _status,
-                      dueDate: _dueDate,
-                      createdAt: DateTime.now(),
-                    );
-                    await DatabaseService(uid: widget.user!.uid).updateTaskData(
+
+                      await DatabaseService(uid: widget.user!.uid)
+                          .updateTaskData(
                         newTask.id,
                         newTask.title,
                         newTask.description,
@@ -143,12 +138,25 @@ class _TaskFormState extends State<TaskForm> {
                         newTask.assignedTo,
                         newTask.status,
                         newTask.createdAt,
-                        newTask.dueDate);
-                    widget.onCreateTask(newTask); // Pass the task back
-                    Navigator.pop(context); // Close the bottom sheet
-                  }
-                },
-                child: const Text('Create Task'),
+                        newTask.dueDate,
+                      );
+
+                      widget.onSubmitTask(newTask);
+                      Navigator.pop(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    backgroundColor: Colors.deepPurple, // Set the button color
+                  ),
+                  child: Text(
+                    widget.task == null ? 'Create Task' : 'Update Task',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
               ),
             ],
           ),
@@ -156,15 +164,102 @@ class _TaskFormState extends State<TaskForm> {
       ),
     );
   }
+
+  Widget _buildTextField({
+    required String label,
+    required String hint,
+    required String initialValue,
+    required FormFieldSetter<String> onSave,
+    FormFieldValidator<String>? validator,
+    int maxLines = 1,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+        ),
+        initialValue: initialValue,
+        maxLines: maxLines,
+        onSaved: onSave,
+        validator: validator,
+      ),
+    );
+  }
+
+  Widget _buildDropdown<T>({
+    required String label,
+    required T? value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<T>(
+        value: value,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+        ),
+        items: items,
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  Widget _buildDatePicker({
+    required String label,
+    required DateTime selectedDate,
+    required ValueChanged<DateTime?> onDatePicked,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: IconButton(
+            icon: Icon(Icons.calendar_today, color: Colors.deepPurple),
+            onPressed: () async {
+              DateTime? pickedDate = await showDatePicker(
+                context: context,
+                initialDate: selectedDate,
+                firstDate: DateTime.now(),
+                lastDate: DateTime(2100),
+              );
+              if (pickedDate != null) {
+                onDatePicked(pickedDate);
+              }
+            },
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+        ),
+        readOnly: true,
+        controller: TextEditingController(
+            text: DateFormat('yyyy-MM-dd').format(selectedDate)),
+      ),
+    );
+  }
 }
 
-// Usage Example:
-void showTaskForm(BuildContext context, Function(Task) onCreateTask,
-    List<MyUser> collaborators) {
+// Usage Example
+void showTaskForm(BuildContext context, Function(Task) onSubmitTask,
+    List<MyUser> collaborators,
+    {Task? task}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (context) =>
-        TaskForm(onCreateTask: onCreateTask, collaborators: collaborators),
+    builder: (context) => TaskForm(
+      onSubmitTask: onSubmitTask,
+      collaborators: collaborators,
+      task: task,
+    ),
   );
 }

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:motion_app/models/project.dart';
 import 'package:motion_app/services/database.dart';
+import 'package:intl/intl.dart'; // Import for date formatting
 import 'package:uuid/uuid.dart';
 
 class CommentScreen extends StatefulWidget {
@@ -39,7 +40,6 @@ class _CommentScreenState extends State<CommentScreen> {
 
   // Fetch comments from Firestore
   Stream<List<Comment>> _fetchComments() {
-    
     return DatabaseService(uid: user!.uid).getProjectComments(widget.projectId);
   }
 
@@ -71,7 +71,6 @@ class _CommentScreenState extends State<CommentScreen> {
       ),
       body: Column(
         children: [
-          // Display comments in a ListView
           Expanded(
             child: StreamBuilder<List<Comment>>(
               stream: _fetchComments(),
@@ -86,6 +85,7 @@ class _CommentScreenState extends State<CommentScreen> {
 
                 List<Comment> comments = snapshot.data!;
                 return ListView.builder(
+                  padding: const EdgeInsets.all(8),
                   itemCount: comments.length,
                   itemBuilder: (context, index) {
                     Comment comment = comments[index];
@@ -95,32 +95,41 @@ class _CommentScreenState extends State<CommentScreen> {
               },
             ),
           ),
-          // Comment input field and button
+          // Comment input field and send button
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _commentController,
                     decoration: InputDecoration(
-                      hintText: 'Enter your comment',
+                      hintText: 'Write a comment...',
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 16),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
                       ),
                     ),
                     maxLines: null, // Allows multi-line input
                   ),
                 ),
-                const SizedBox(width: 8),
-                // Button is only enabled if there's input
+                const SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: _isButtonEnabled ? _addComment : null,
                   style: ElevatedButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     backgroundColor: Colors.indigo[600],
-                    disabledBackgroundColor: Colors.grey,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    shadowColor: Colors.indigo[300],
                   ),
-                  child: const Text('Send'),
+                  child: const Icon(Icons.send, color: Colors.white),
                 ),
               ],
             ),
@@ -130,7 +139,7 @@ class _CommentScreenState extends State<CommentScreen> {
     );
   }
 
-  // Build a tile for each comment, showing the author and content
+  // Build a tile for each comment with author name and formatted time
   Widget _buildCommentTile(Comment comment) {
     return FutureBuilder<String?>(
       future: DatabaseService(uid: user!.uid).getUserNameById(comment.userId),
@@ -147,14 +156,48 @@ class _CommentScreenState extends State<CommentScreen> {
           );
         } else {
           String? displayName = snapshot.data;
+          String formattedTime = _formatTimestamp(comment.createdAt);
 
-          return ListTile(
-            title: Text(comment.content),
-            subtitle: Text('by $displayName at ${comment.createdAt}'),
-            isThreeLine: true,
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                    vertical: 10, horizontal: 16),
+                title: Text(
+                  comment.content,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                subtitle: Text(
+                  'by $displayName • $formattedTime',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                isThreeLine: true,
+              ),
+            ),
           );
         }
       },
     );
+  }
+
+  // Format the timestamp to "X hours ago" format
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} min ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} hours ago';
+    } else {
+      return DateFormat.yMMMd().format(timestamp);
+    }
   }
 }

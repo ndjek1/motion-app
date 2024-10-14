@@ -371,6 +371,32 @@ class DatabaseService {
     }
   }
 
+
+ Future<String?> deleteTask(String taskId) async {
+  try {
+    // Assuming your task data is stored in a 'tasks' collection
+    CollectionReference tasksCollection = FirebaseFirestore.instance.collection('tasks');
+
+    // Query to find the task by its ID
+    DocumentSnapshot taskSnapshot = await tasksCollection.doc(taskId).get();
+
+    if (taskSnapshot.exists) {
+      // If the task exists, delete it
+      await tasksCollection.doc(taskId).delete();
+      
+      // Optionally, return a success message or the task ID
+      return "Task with ID $taskId deleted successfully.";
+    } else {
+      throw Exception("Task not found.");
+    }
+  } catch (e) {
+    // Handle any errors
+    print('Error deleting task: $e');
+    return null;
+  }
+}
+
+
   Future<String?> getUserNameById(String uid) async {
     try {
       QuerySnapshot querySnapshot =
@@ -384,6 +410,35 @@ class DatabaseService {
     } catch (e) {
       print('Error fetching usename by uid: $e');
       return null;
+    }
+  }
+
+  // Function to calculate project progress percentage
+  Future<double> calculateProjectProgress(String projectId) async {
+    try {
+      // Fetch all tasks related to the project
+      QuerySnapshot querySnapshot = await tasksCollection.where('projectId', isEqualTo: projectId).get();
+
+      // Get total number of tasks
+      int totalTasks = querySnapshot.docs.length;
+
+      if (totalTasks == 0) {
+        return 0.0; // Return 0 if there are no tasks
+      }
+
+      // Count the number of completed tasks
+      int completedTasks = querySnapshot.docs.where((doc) {
+        Map<String, dynamic> taskData = doc.data() as Map<String, dynamic>;
+        return taskData['status'] == 'Completed'; // Assuming 'status' is a field in your tasks collection
+      }).length;
+
+      // Calculate progress percentage
+      double progressPercentage = (completedTasks / totalTasks) * 100;
+
+      return progressPercentage;
+    } catch (e) {
+      print("Error calculating progress: $e");
+      return 0.0;
     }
   }
 }

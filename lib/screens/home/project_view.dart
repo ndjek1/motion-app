@@ -28,6 +28,11 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
     return Project.fromDocument(doc);
   }
 
+  Future<double> fetchProjectProgress() async {
+    return await DatabaseService(uid: user!.uid)
+        .calculateProjectProgress(widget.projectId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Project>(
@@ -38,10 +43,7 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
         } else if (snapshot.hasError) {
           return const Center(child: Text('Error fetching project details.'));
         } else if (!snapshot.hasData) {
-          return const Center(
-              child: Text(
-            'Project not found.',
-          ));
+          return const Center(child: Text('Project not found.'));
         } else {
           Project project = snapshot.data!;
 
@@ -52,10 +54,7 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
               backgroundColor: Colors.blueAccent,
               actions: [
                 IconButton(
-                  icon: const Icon(
-                    Icons.person_add,
-                    color: Colors.white,
-                  ),
+                  icon: const Icon(Icons.person_add, color: Colors.white),
                   onPressed: () async {
                     showDialog(
                       context: context,
@@ -67,17 +66,13 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                   },
                 ),
                 IconButton(
-                  icon: const Icon(
-                    Icons.comment,
-                    color: Colors.white,
-                  ),
+                  icon: const Icon(Icons.comment, color: Colors.white),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => CommentScreen(
-                          projectId: widget
-                              .projectId, // Pass project ID to the comment screen
+                          projectId: widget.projectId,
                         ),
                       ),
                     );
@@ -98,13 +93,63 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                       style:
                           const TextStyle(fontSize: 16, color: Colors.black54)),
                   const SizedBox(height: 16),
+                  FutureBuilder<double>(
+                    future: fetchProjectProgress(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return const Text('Error calculating progress');
+                      } else if (!snapshot.hasData) {
+                        return const Text('No progress data available');
+                      } else {
+                        double progress = snapshot.data!;
+
+                        return Column(
+                          children: [
+                            const Text('Project Progress',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            Center(
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 150,
+                                    height: 150,
+                                    child: CircularProgressIndicator(
+                                      value: progress / 100,
+                                      backgroundColor: Colors.grey[300],
+                                      strokeWidth: 8,
+                                      valueColor:
+                                          const AlwaysStoppedAnimation<Color>(
+                                              Colors.blueAccent),
+                                    ),
+                                  ),
+                                  Text(
+                                    '${progress.toStringAsFixed(1)}%',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   const Text('Tasks',
                       style:
                           TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   StreamBuilder<List<Task>>(
                     stream: DatabaseService(uid: user!.uid)
-                        .getTasksStream(project.id), // Task stream
+                        .getTasksStream(project.id),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
@@ -137,22 +182,75 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                                     ),
                                   ),
                                   subtitle: Text(task.description),
-                                  trailing: Checkbox(
-                                    value: isCompleted,
-                                    checkColor: Colors.indigo,
-                                    fillColor: const WidgetStatePropertyAll(
-                                        Colors.white),
-                                    onChanged: (bool? value) async {
-                                      // Toggle task completion status
-                                      String newStatus =
-                                          isCompleted ? 'Pending' : 'Completed';
-                                      await DatabaseService(uid: user!.uid)
-                                          .updateTaskStatus(task.id, newStatus);
-                                      setState(() {
-                                        task.status =
-                                            newStatus; // Update local state
-                                      });
-                                    },
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      PopupMenuButton<int>(
+                                        icon: const Icon(Icons.more_vert,
+                                            color: Colors.indigo),
+                                        onSelected: (value) async {
+                                          if (value == 1) {
+                                            _showTaskForm(context, project.id,
+                                                task:
+                                                    task); // Pass task for editing
+                                          } else if (value == 2) {
+                                            String newStatus = isCompleted
+                                                ? 'Pending'
+                                                : 'Completed';
+                                            await DatabaseService(
+                                                    uid: user!.uid)
+                                                .updateTaskStatus(
+                                                    task.id, newStatus);
+                                            setState(() {
+                                              task.status = newStatus;
+                                            });
+                                          } else if (value == 3) {
+                                            String response =
+                                                DatabaseService(uid: user!.uid)
+                                                        .deleteTask(task.id)
+                                                    as String;
+                                            print(response);
+                                          }
+                                        },
+                                        itemBuilder: (BuildContext context) =>
+                                            <PopupMenuEntry<int>>[
+                                          const PopupMenuItem<int>(
+                                            value: 1,
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.edit),
+                                                SizedBox(width: 8),
+                                                Text('Edit'),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem<int>(
+                                            value: 2,
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.check),
+                                                SizedBox(width: 8),
+                                                Text('Mark as done'),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem<int>(
+                                            value: 3,
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.delete),
+                                                SizedBox(width: 8),
+                                                Text('Delete'),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Icon(Icons.check_circle,
+                                          color: isCompleted
+                                              ? Colors.green
+                                              : Colors.grey)
+                                    ],
                                   ),
                                 ),
                               );
@@ -167,10 +265,7 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                     onPressed: () {
                       _showTaskForm(context, project.id);
                     },
-                    icon: const Icon(
-                      Icons.add,
-                      color: Colors.white,
-                    ),
+                    icon: const Icon(Icons.add, color: Colors.white),
                     label: const Text(
                       "Add Task",
                       style: TextStyle(color: Colors.white),
@@ -190,7 +285,8 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
     );
   }
 
-  void _showTaskForm(BuildContext context, String projectId) async {
+  void _showTaskForm(BuildContext context, String projectId,
+      {Task? task}) async {
     List<MyUser> collaborators =
         await DatabaseService(uid: user!.uid).fetchCollaborators(projectId);
     showModalBottomSheet(
@@ -202,19 +298,35 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: TaskForm(
-            onCreateTask: (Task newTask) {
-              DatabaseService(uid: user!.uid).updateTaskData(
-                newTask.id,
-                newTask.title,
-                newTask.description,
-                projectId,
-                newTask.assignedTo,
-                newTask.status,
-                newTask.createdAt,
-                newTask.dueDate,
-              );
+            onSubmitTask: (Task editedTask) {
+              // If task is provided, update the task; otherwise, create a new task
+              if (task != null) {
+                DatabaseService(uid: user!.uid).updateTaskData(
+                  editedTask.id,
+                  editedTask.title,
+                  editedTask.description,
+                  editedTask.projectId,
+                  editedTask.assignedTo,
+                  editedTask.status,
+                  editedTask.createdAt,
+                  editedTask.dueDate,
+                );
+              } else {
+                // For creating a new task
+                DatabaseService(uid: user!.uid).updateTaskData(
+                  editedTask.id,
+                  editedTask.title,
+                  editedTask.description,
+                  projectId,
+                  editedTask.assignedTo,
+                  editedTask.status,
+                  editedTask.createdAt,
+                  editedTask.dueDate,
+                );
+              }
             },
             collaborators: collaborators,
+            task: task, // Pass the task for editing
           ),
         );
       },
