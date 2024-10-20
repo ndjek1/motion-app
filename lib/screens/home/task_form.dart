@@ -89,7 +89,7 @@ class _TaskFormState extends State<TaskForm> {
               _buildDropdown(
                 label: 'Status',
                 value: _status,
-                items: ['Pending', 'Completed'].map((status) {
+                items: ['Pending', 'inProgress', 'Completed'].map((status) {
                   return DropdownMenuItem<String>(
                     value: status,
                     child: Text(status),

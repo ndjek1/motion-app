@@ -83,7 +83,10 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                     Project newProject = Project(
                         id: projectId,
                         title: _title,
-                        description: _description);
+                        description: _description,
+                        isArchived: false,
+                        )
+                        ;
 
                     DatabaseService(uid: user!.uid).updateProjectData(
                         projectId,
@@ -92,6 +95,7 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                         user!.uid,
                         createdAt.toString(),
                         null,
+                        false,
                         null,
                         null);
                     // Navigate back and pass the new project

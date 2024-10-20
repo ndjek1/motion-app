@@ -8,6 +8,8 @@ import 'package:motion_app/screens/home/invitation.dart';
 import 'package:motion_app/screens/home/task_form.dart';
 import 'package:motion_app/services/database.dart';
 
+import 'package:fl_chart/fl_chart.dart';
+
 class ProjectDetailsWidget extends StatefulWidget {
   final String projectId;
 
@@ -19,6 +21,10 @@ class ProjectDetailsWidget extends StatefulWidget {
 
 class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
   User? user = FirebaseAuth.instance.currentUser;
+  late List<Task> tasks;
+  int pendingTaskCount = 0;
+  int inProgressTaskCount = 0;
+  int completedTaskCount = 0;
 
   Future<Project> fetchProjectDetails() async {
     DocumentSnapshot doc = await FirebaseFirestore.instance
@@ -137,6 +143,12 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                                 ],
                               ),
                             ),
+                            const SizedBox(height: 16),
+                            const Text('Task Progress',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            // _buildBarChart(),
                           ],
                         );
                       }
@@ -147,6 +159,7 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                       style:
                           TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
+                  // Task list stream builder here...
                   StreamBuilder<List<Task>>(
                     stream: DatabaseService(uid: user!.uid)
                         .getTasksStream(project.id),
@@ -159,7 +172,7 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                       } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return const Center(child: Text('No tasks available.'));
                       } else {
-                        List<Task> tasks = snapshot.data!;
+                        tasks = snapshot.data!;
 
                         return Expanded(
                           child: ListView.builder(
@@ -260,28 +273,71 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                       }
                     },
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      _showTaskForm(context, project.id);
-                    },
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    label: const Text(
-                      "Add Task",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 16),
-                      backgroundColor: Colors.blueAccent,
-                    ),
-                  ),
                 ],
               ),
             ),
           );
         }
       },
+    );
+  }
+
+  Widget _buildBarChart() {
+    return BarChart(
+      BarChartData(
+        barGroups: [
+          BarChartGroupData(
+            x: 0,
+            barRods: [
+              BarChartRodData(
+                toY: pendingTaskCount.toDouble(),
+                color: Colors.redAccent,
+                width: 16,
+              ),
+            ],
+          ),
+          BarChartGroupData(
+            x: 1,
+            barRods: [
+              BarChartRodData(
+                toY: inProgressTaskCount.toDouble(),
+                color: Colors.orangeAccent,
+                width: 16,
+              ),
+            ],
+          ),
+          BarChartGroupData(
+            x: 2,
+            barRods: [
+              BarChartRodData(
+                toY: completedTaskCount.toDouble(),
+                color: Colors.greenAccent,
+                width: 16,
+              ),
+            ],
+          ),
+        ],
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                switch (value.toInt()) {
+                  case 0:
+                    return const Text('Pending');
+                  case 1:
+                    return const Text('In Progress');
+                  case 2:
+                    return const Text('Completed');
+                  default:
+                    return const Text('');
+                }
+              },
+            ),
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+      ),
     );
   }
 

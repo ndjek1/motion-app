@@ -18,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final AuthService _auth = AuthService();
-  final LocalStorageService _localStorageService = LocalStorageService();
+  // final LocalStorageService _localStorageService = LocalStorageService();
   List<Project> _projects = [];
   List<Project> _invitedProjects = [];
 
@@ -58,12 +58,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _deleteProject(int index) async {
-    await _localStorageService.deleteProject(index, _projects);
-    setState(() {
-      _projects.removeAt(index);
-    });
-  }
+  // Future<void> _deleteProject(int index) async {
+  //   await _localStorageService.deleteProject(index, _projects);
+  //   setState(() {
+  //     _projects.removeAt(index);
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -217,6 +217,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: ListTile(
+                        trailing: const Icon(
+                          Icons.more_vert,
+                          color: Colors.indigo,
+                          size: 40.0,
+                        ),
                         leading: const Icon(
                           Icons.note,
                           size: 40.0,

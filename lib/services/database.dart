@@ -39,6 +39,7 @@ class DatabaseService {
       String? ownerId,
       String? createdAt,
       String? updatedAt,
+      bool isArchived,
       List<String>? collaboratorIds,
       List<Task>? tasks) async {
     if (uid != null) {
@@ -49,6 +50,7 @@ class DatabaseService {
         'ownerId': ownerId,
         'createdAt': createdAt,
         'updatedAt': updatedAt,
+        'isArchived': isArchived,
         'collaboratorIds': collaboratorIds,
         'tasks': tasks,
       });
@@ -56,6 +58,11 @@ class DatabaseService {
       throw Exception("User ID cannot be null");
     }
   }
+
+  Future<void> archiveProject(String projectId) async {
+  await projectCollection.doc(projectId).update({'isArchived': true});
+}
+
 
   Future<void> updateTaskData(
     String? id,

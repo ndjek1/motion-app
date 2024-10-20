@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
+
 
 class Project {
   final String id;
@@ -8,6 +8,7 @@ class Project {
   final String? ownerId; // ID of the user who created the project
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  bool isArchived = false;
   final List<String>? collaboratorIds; // List of collaborator user IDs
   final List<Task>? tasks; // List of tasks related to the project
 
@@ -18,6 +19,7 @@ class Project {
     this.ownerId,
     this.createdAt,
     this.updatedAt,
+    required this.isArchived,
     this.collaboratorIds,
     this.tasks,
   });
@@ -29,6 +31,7 @@ class Project {
       ownerId: data['ownerId'] ?? '',
       title: data['title'] ?? '',
       description: data['description'] ?? '',
+      isArchived: data['isArchived']
       // Initialize other fields here
     );
   }
@@ -39,6 +42,7 @@ class Project {
       title: doc['title'],
       description: doc['description'],
       ownerId: doc['ownerId'],
+      isArchived: doc['isArchived'],
     );
   }
 }
