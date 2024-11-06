@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:motion_app/models/project.dart';
 import 'package:motion_app/services/database.dart';
 import 'package:uuid/uuid.dart';
@@ -13,6 +14,7 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
   final _formKey = GlobalKey<FormState>();
   String _title = '';
   String _description = '';
+  DateTime _dueDate = DateTime.now();
   final Uuid _uuid = Uuid(); // Initialize UUID generator
 
   bool _isFreeUser = true; // Default to free user
@@ -72,6 +74,15 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                 },
               ),
               const SizedBox(height: 20),
+              _buildDatePicker(
+                label: 'Due Date',
+                selectedDate: _dueDate,
+                onDatePicked: (pickedDate) {
+                  setState(() {
+                    _dueDate = pickedDate!;
+                  });
+                },
+              ),
               ElevatedButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
@@ -81,17 +92,17 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                     DateTime createdAt = DateTime.now();
                     // Create a new Project object
                     Project newProject = Project(
-                        id: projectId,
-                        title: _title,
-                        description: _description,
-                        isArchived: false,
-                        )
-                        ;
+                      id: projectId,
+                      title: _title,
+                      description: _description,
+                      isArchived: false,
+                    );
 
                     DatabaseService(uid: user!.uid).updateProjectData(
                         projectId,
                         _title,
                         _description,
+                        _dueDate,
                         user!.uid,
                         createdAt.toString(),
                         null,
@@ -107,6 +118,41 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDatePicker({
+    required String label,
+    required DateTime selectedDate,
+    required ValueChanged<DateTime?> onDatePicked,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: IconButton(
+            icon: Icon(Icons.calendar_today, color: Colors.indigo),
+            onPressed: () async {
+              DateTime? pickedDate = await showDatePicker(
+                context: context,
+                initialDate: selectedDate,
+                firstDate: DateTime.now(),
+                lastDate: DateTime(2100),
+              );
+              if (pickedDate != null) {
+                onDatePicked(pickedDate);
+              }
+            },
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+        ),
+        readOnly: true,
+        controller: TextEditingController(
+            text: DateFormat('yyyy-MM-dd').format(selectedDate)),
       ),
     );
   }

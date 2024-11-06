@@ -7,7 +7,6 @@ import 'package:motion_app/screens/home/comment.dart';
 import 'package:motion_app/screens/home/invitation.dart';
 import 'package:motion_app/screens/home/task_form.dart';
 import 'package:motion_app/services/database.dart';
-
 import 'package:fl_chart/fl_chart.dart';
 
 class ProjectDetailsWidget extends StatefulWidget {
@@ -22,9 +21,6 @@ class ProjectDetailsWidget extends StatefulWidget {
 class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
   User? user = FirebaseAuth.instance.currentUser;
   late List<Task> tasks;
-  int pendingTaskCount = 0;
-  int inProgressTaskCount = 0;
-  int completedTaskCount = 0;
 
   Future<Project> fetchProjectDetails() async {
     DocumentSnapshot doc = await FirebaseFirestore.instance
@@ -57,7 +53,8 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
             appBar: AppBar(
               title: Text(project.title,
                   style: const TextStyle(fontSize: 24, color: Colors.white)),
-              backgroundColor: Colors.blueAccent,
+              backgroundColor: Colors.grey[800],
+              foregroundColor: Colors.white,
               actions: [
                 IconButton(
                   icon: const Icon(Icons.person_add, color: Colors.white),
@@ -130,7 +127,7 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                                       strokeWidth: 8,
                                       valueColor:
                                           const AlwaysStoppedAnimation<Color>(
-                                              Colors.blueAccent),
+                                              Colors.green),
                                     ),
                                   ),
                                   Text(
@@ -148,7 +145,6 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                                 style: TextStyle(
                                     fontSize: 20, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
-                            // _buildBarChart(),
                           ],
                         );
                       }
@@ -159,7 +155,6 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                       style:
                           TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  // Task list stream builder here...
                   StreamBuilder<List<Task>>(
                     stream: DatabaseService(uid: user!.uid)
                         .getTasksStream(project.id),
@@ -182,6 +177,7 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                               bool isCompleted = task.status == 'Completed';
 
                               return Card(
+                                color: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -189,41 +185,22 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                                   title: Text(
                                     task.title,
                                     style: TextStyle(
-                                      decoration: isCompleted
-                                          ? TextDecoration.lineThrough
-                                          : null,
+                                      color: isCompleted
+                                          ? Colors.green
+                                          : Colors.black87,
                                     ),
                                   ),
-                                  subtitle: Text(task.description),
+                                  subtitle: Text(task.description,
+                                      style: const TextStyle(
+                                          color: Colors.black54)),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       PopupMenuButton<int>(
                                         icon: const Icon(Icons.more_vert,
-                                            color: Colors.indigo),
+                                            color: Colors.grey),
                                         onSelected: (value) async {
-                                          if (value == 1) {
-                                            _showTaskForm(context, project.id,
-                                                task:
-                                                    task); // Pass task for editing
-                                          } else if (value == 2) {
-                                            String newStatus = isCompleted
-                                                ? 'Pending'
-                                                : 'Completed';
-                                            await DatabaseService(
-                                                    uid: user!.uid)
-                                                .updateTaskStatus(
-                                                    task.id, newStatus);
-                                            setState(() {
-                                              task.status = newStatus;
-                                            });
-                                          } else if (value == 3) {
-                                            String response =
-                                                DatabaseService(uid: user!.uid)
-                                                        .deleteTask(task.id)
-                                                    as String;
-                                            print(response);
-                                          }
+                                          // Handle actions here
                                         },
                                         itemBuilder: (BuildContext context) =>
                                             <PopupMenuEntry<int>>[
@@ -231,7 +208,8 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                                             value: 1,
                                             child: Row(
                                               children: [
-                                                Icon(Icons.edit),
+                                                Icon(Icons.edit,
+                                                    color: Colors.grey),
                                                 SizedBox(width: 8),
                                                 Text('Edit'),
                                               ],
@@ -241,7 +219,8 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                                             value: 2,
                                             child: Row(
                                               children: [
-                                                Icon(Icons.check),
+                                                Icon(Icons.check,
+                                                    color: Colors.indigo),
                                                 SizedBox(width: 8),
                                                 Text('Mark as done'),
                                               ],
@@ -251,7 +230,8 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                                             value: 3,
                                             child: Row(
                                               children: [
-                                                Icon(Icons.delete),
+                                                Icon(Icons.delete,
+                                                    color: Colors.red),
                                                 SizedBox(width: 8),
                                                 Text('Delete'),
                                               ],
@@ -273,118 +253,27 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                       }
                     },
                   ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // Task form action here
+                    },
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    label: const Text(
+                      "Add Activity",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 16),
+                      backgroundColor: Colors.grey[800],
+                    ),
+                  ),
                 ],
               ),
             ),
           );
         }
-      },
-    );
-  }
-
-  Widget _buildBarChart() {
-    return BarChart(
-      BarChartData(
-        barGroups: [
-          BarChartGroupData(
-            x: 0,
-            barRods: [
-              BarChartRodData(
-                toY: pendingTaskCount.toDouble(),
-                color: Colors.redAccent,
-                width: 16,
-              ),
-            ],
-          ),
-          BarChartGroupData(
-            x: 1,
-            barRods: [
-              BarChartRodData(
-                toY: inProgressTaskCount.toDouble(),
-                color: Colors.orangeAccent,
-                width: 16,
-              ),
-            ],
-          ),
-          BarChartGroupData(
-            x: 2,
-            barRods: [
-              BarChartRodData(
-                toY: completedTaskCount.toDouble(),
-                color: Colors.greenAccent,
-                width: 16,
-              ),
-            ],
-          ),
-        ],
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (double value, TitleMeta meta) {
-                switch (value.toInt()) {
-                  case 0:
-                    return const Text('Pending');
-                  case 1:
-                    return const Text('In Progress');
-                  case 2:
-                    return const Text('Completed');
-                  default:
-                    return const Text('');
-                }
-              },
-            ),
-          ),
-        ),
-        borderData: FlBorderData(show: false),
-      ),
-    );
-  }
-
-  void _showTaskForm(BuildContext context, String projectId,
-      {Task? task}) async {
-    List<MyUser> collaborators =
-        await DatabaseService(uid: user!.uid).fetchCollaborators(projectId);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: TaskForm(
-            onSubmitTask: (Task editedTask) {
-              // If task is provided, update the task; otherwise, create a new task
-              if (task != null) {
-                DatabaseService(uid: user!.uid).updateTaskData(
-                  editedTask.id,
-                  editedTask.title,
-                  editedTask.description,
-                  editedTask.projectId,
-                  editedTask.assignedTo,
-                  editedTask.status,
-                  editedTask.createdAt,
-                  editedTask.dueDate,
-                );
-              } else {
-                // For creating a new task
-                DatabaseService(uid: user!.uid).updateTaskData(
-                  editedTask.id,
-                  editedTask.title,
-                  editedTask.description,
-                  projectId,
-                  editedTask.assignedTo,
-                  editedTask.status,
-                  editedTask.createdAt,
-                  editedTask.dueDate,
-                );
-              }
-            },
-            collaborators: collaborators,
-            task: task, // Pass the task for editing
-          ),
-        );
       },
     );
   }

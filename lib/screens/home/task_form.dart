@@ -49,23 +49,23 @@ class _TaskFormState extends State<TaskForm> {
             children: [
               Center(
                 child: Text(
-                  widget.task == null ? 'Create Task' : 'Edit Task',
+                  widget.task == null ? 'Create Activity' : 'Edit Activity',
                   style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      fontWeight: FontWeight.bold, color: Colors.deepPurple),
+                      fontWeight: FontWeight.bold, color: Colors.indigo),
                 ),
               ),
               const SizedBox(height: 20),
               _buildTextField(
-                label: 'Task Title',
-                hint: 'Enter task title',
+                label: 'Activity Title',
+                hint: 'Enter activity title',
                 initialValue: _title,
                 onSave: (value) => _title = value!,
                 validator: (value) =>
-                    value!.isEmpty ? 'Please enter a task title' : null,
+                    value!.isEmpty ? 'Please enter a activity title' : null,
               ),
               _buildTextField(
                 label: 'Description',
-                hint: 'Enter task description',
+                hint: 'Enter activity description',
                 initialValue: _description,
                 onSave: (value) => _description = value!,
                 maxLines: 3,
@@ -150,11 +150,11 @@ class _TaskFormState extends State<TaskForm> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    backgroundColor: Colors.deepPurple, // Set the button color
+                    backgroundColor: Colors.indigo, // Set the button color
                   ),
                   child: Text(
-                    widget.task == null ? 'Create Task' : 'Update Task',
-                    style: const TextStyle(fontSize: 16),
+                    widget.task == null ? 'Create Activity' : 'Update Activity',
+                    style: const TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
               ),
@@ -224,7 +224,7 @@ class _TaskFormState extends State<TaskForm> {
         decoration: InputDecoration(
           labelText: label,
           suffixIcon: IconButton(
-            icon: Icon(Icons.calendar_today, color: Colors.deepPurple),
+            icon: Icon(Icons.calendar_today, color: Colors.indigo),
             onPressed: () async {
               DateTime? pickedDate = await showDatePicker(
                 context: context,

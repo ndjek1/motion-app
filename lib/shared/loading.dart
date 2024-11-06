@@ -29,10 +29,10 @@ class _LoadingState extends State<Loading> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.green[100],
+      color: Colors.indigo[100],
       child: Center(
         child: SpinKitThreeBounce(
-          color: Colors.green,
+          color: Colors.indigo,
           size: 70.0,
           controller: _controller, // pass the controller here
         ),

@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class Project {
   final String id;
   final String title;
@@ -8,6 +7,7 @@ class Project {
   final String? ownerId; // ID of the user who created the project
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final DateTime? dueDate;
   bool isArchived = false;
   final List<String>? collaboratorIds; // List of collaborator user IDs
   final List<Task>? tasks; // List of tasks related to the project
@@ -19,6 +19,7 @@ class Project {
     this.ownerId,
     this.createdAt,
     this.updatedAt,
+    this.dueDate,
     required this.isArchived,
     this.collaboratorIds,
     this.tasks,
@@ -27,13 +28,14 @@ class Project {
   // Factory constructor to create a Project from Firestore document
   factory Project.fromFirestore(Map<String, dynamic> data) {
     return Project(
-      id: data['projectId'] ?? '',
-      ownerId: data['ownerId'] ?? '',
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      isArchived: data['isArchived']
-      // Initialize other fields here
-    );
+        id: data['projectId'] ?? '',
+        ownerId: data['ownerId'] ?? '',
+        title: data['title'] ?? '',
+        description: data['description'] ?? '',
+        dueDate: (data['dueDate'] as Timestamp).toDate(),
+        isArchived: data['isArchived']
+        // Initialize other fields here
+        );
   }
 
   factory Project.fromDocument(DocumentSnapshot doc) {
@@ -41,6 +43,7 @@ class Project {
       id: doc.id,
       title: doc['title'],
       description: doc['description'],
+      dueDate: (doc['dueDate'] as Timestamp).toDate(),
       ownerId: doc['ownerId'],
       isArchived: doc['isArchived'],
     );
@@ -100,7 +103,6 @@ class Comment {
     required this.projectId,
     required this.createdAt,
   });
-
 
   // Factory constructor to create a Project from Firestore document
   factory Comment.fromFirestore(Map<String, dynamic> data) {

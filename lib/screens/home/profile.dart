@@ -104,8 +104,12 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile'),
-        backgroundColor: Colors.indigo[600],
+        title: const Text(
+          'Edit Profile',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.grey[800],
+        foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -155,7 +159,6 @@ class _ProfileWidgetState extends State<ProfileWidget> {
               ElevatedButton(
                   onPressed: _updateDisplayName,
                   style: ElevatedButton.styleFrom(
-                    
                     backgroundColor: Colors.indigo[600],
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 12),

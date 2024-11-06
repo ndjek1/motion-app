@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 
+
+const backgroundColor = Colors.indigo; // Main theme color
+const appBarColor = Colors.indigoAccent;
+const textFieldFillColor = Colors.white10;
+const buttonColor = Colors.indigoAccent;
+const primaryTextColor = Colors.white;
+const errorTextColor = Colors.red;
+
 const textInputDecoration = InputDecoration(
     fillColor: Colors.white,
     filled: true,
@@ -9,7 +17,4 @@ const textInputDecoration = InputDecoration(
       width: 2.0,
     )),
     focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.green, width: 2.0)));
-
-
-
+        borderSide: BorderSide(color: Colors.indigo, width: 2.0)));

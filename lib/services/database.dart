@@ -36,6 +36,7 @@ class DatabaseService {
       String? uid,
       String title,
       String description,
+      DateTime dueDate,
       String? ownerId,
       String? createdAt,
       String? updatedAt,
@@ -47,6 +48,7 @@ class DatabaseService {
         'projectId': uid,
         'title': title,
         'description': description,
+        'dueDate':dueDate,
         'ownerId': ownerId,
         'createdAt': createdAt,
         'updatedAt': updatedAt,
@@ -61,6 +63,29 @@ class DatabaseService {
 
   Future<void> archiveProject(String projectId) async {
   await projectCollection.doc(projectId).update({'isArchived': true});
+}
+
+
+ Future<String?> deleteProject(String projectId) async {
+  try {
+    
+    // Query to find the task by its ID
+    DocumentSnapshot projectSnapshot = await projectCollection.doc(projectId).get();
+
+    if (projectSnapshot.exists) {
+      // If the task exists, delete it
+      await projectCollection.doc(projectId).delete();
+      
+      // Optionally, return a success message or the task ID
+      return "Task with ID $projectId deleted successfully.";
+    } else {
+      throw Exception("Task not found.");
+    }
+  } catch (e) {
+    // Handle any errors
+    print('Error deleting task: $e');
+    return null;
+  }
 }
 
 
@@ -79,6 +104,7 @@ class DatabaseService {
         'taskId': id,
         'title': title,
         'description': description,
+        'dueDate': dueDate,
         'projectId': projectId,
         'assignedTo': assignedTo,
         'createdAt': createdAt,
@@ -192,6 +218,17 @@ class DatabaseService {
     return projectCollection
         .where('ownerId',
             isEqualTo: uid) // Assuming you're filtering by the user
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) =>
+                Project.fromFirestore(doc.data() as Map<String, dynamic>))
+            .toList());
+  }
+
+    Stream<List<Project>> getInvitedProjectStream(String uid) {
+    return projectCollection
+        .where('collaboratorIds',
+            arrayContains: uid) // Assuming you're filtering by the user
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) =>
