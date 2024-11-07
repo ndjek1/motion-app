@@ -2,11 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:motion_app/models/project.dart';
 import 'package:motion_app/services/database.dart';
-import 'package:intl/intl.dart'; // Import for date formatting
+import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 class CommentScreen extends StatefulWidget {
-  final String projectId; // The project for which the comments are displayed
+  final String projectId;
   const CommentScreen({required this.projectId, Key? key}) : super(key: key);
 
   @override
@@ -15,35 +15,31 @@ class CommentScreen extends StatefulWidget {
 
 class _CommentScreenState extends State<CommentScreen> {
   final TextEditingController _commentController = TextEditingController();
-  bool _isButtonEnabled = false; // Controls button visibility
+  bool _isButtonEnabled = false;
   User? user = FirebaseAuth.instance.currentUser;
-  final Uuid _uuid = Uuid(); // Initialize UUID generator
+  final Uuid _uuid = Uuid();
 
   @override
   void initState() {
     super.initState();
-    _commentController.addListener(_onCommentChanged); // Listen for input changes
+    _commentController.addListener(_onCommentChanged);
   }
 
   @override
   void dispose() {
-    _commentController.dispose(); // Dispose the controller when done
+    _commentController.dispose();
     super.dispose();
   }
 
-  // Enable or disable button based on text input
   void _onCommentChanged() {
-    setState(() {
-      _isButtonEnabled = _commentController.text.isNotEmpty;
-    });
+    final isButtonEnabled = _commentController.text.isNotEmpty;
+    if (_isButtonEnabled != isButtonEnabled) {
+      setState(() {
+        _isButtonEnabled = isButtonEnabled;
+      });
+    }
   }
 
-  // Fetch comments from Firestore
-  Stream<List<Comment>> _fetchComments() {
-    return DatabaseService(uid: user!.uid).getProjectComments(widget.projectId);
-  }
-
-  // Add a new comment to Firestore
   Future<void> _addComment() async {
     if (_commentController.text.isEmpty) return;
 
@@ -55,11 +51,7 @@ class _CommentScreenState extends State<CommentScreen> {
       DateTime.now(),
     );
 
-    _commentController.clear(); // Clear the text field after sending
-
-    setState(() {
-      // Trigger a rebuild after the comment is added
-    });
+    _commentController.clear();
   }
 
   @override
@@ -67,35 +59,14 @@ class _CommentScreenState extends State<CommentScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Comments'),
-        backgroundColor: Colors.indigo[600],
+        backgroundColor: Colors.grey[800],
+        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<List<Comment>>(
-              stream: _fetchComments(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return const Center(child: Text('Error loading comments.'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No comments yet.'));
-                }
-
-                List<Comment> comments = snapshot.data!;
-                return ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: comments.length,
-                  itemBuilder: (context, index) {
-                    Comment comment = comments[index];
-                    return _buildCommentTile(comment);
-                  },
-                );
-              },
-            ),
+            child: CommentList(projectId: widget.projectId),
           ),
-          // Comment input field and send button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
@@ -114,15 +85,15 @@ class _CommentScreenState extends State<CommentScreen> {
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    maxLines: null, // Allows multi-line input
+                    maxLines: null,
                   ),
                 ),
                 const SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: _isButtonEnabled ? _addComment : null,
                   style: ElevatedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
                     backgroundColor: Colors.indigo[600],
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
@@ -138,11 +109,47 @@ class _CommentScreenState extends State<CommentScreen> {
       ),
     );
   }
+}
 
-  // Build a tile for each comment with author name and formatted time
+class CommentList extends StatelessWidget {
+  final String projectId;
+  const CommentList({required this.projectId, Key? key}) : super(key: key);
+
+  Stream<List<Comment>> _fetchComments(String projectId) {
+    final user = FirebaseAuth.instance.currentUser;
+    return DatabaseService(uid: user!.uid).getProjectComments(projectId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Comment>>(
+      stream: _fetchComments(projectId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return const Center(child: Text('Error loading comments.'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('No comments yet.'));
+        }
+
+        List<Comment> comments = snapshot.data!;
+        return ListView.builder(
+          padding: const EdgeInsets.all(8),
+          itemCount: comments.length,
+          itemBuilder: (context, index) {
+            Comment comment = comments[index];
+            return _buildCommentTile(comment);
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildCommentTile(Comment comment) {
     return FutureBuilder<String?>(
-      future: DatabaseService(uid: user!.uid).getUserNameById(comment.userId),
+      future: DatabaseService(uid: FirebaseAuth.instance.currentUser!.uid)
+          .getUserNameById(comment.userId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const ListTile(
@@ -166,8 +173,8 @@ class _CommentScreenState extends State<CommentScreen> {
                 borderRadius: BorderRadius.circular(15),
               ),
               child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                    vertical: 10, horizontal: 16),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                 title: Text(
                   comment.content,
                   style: const TextStyle(fontSize: 16),
@@ -185,7 +192,6 @@ class _CommentScreenState extends State<CommentScreen> {
     );
   }
 
-  // Format the timestamp to "X hours ago" format
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);

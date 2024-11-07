@@ -485,4 +485,23 @@ class DatabaseService {
       return 0.0;
     }
   }
+
+
+  Future<List<String>> getMatchingUserEmails(String query) async {
+  try {
+    // Retrieve matching emails based on the query
+    final snapshot = await userCollection
+        .where('email', isGreaterThanOrEqualTo: query)
+        .where('email', isLessThanOrEqualTo: query + '\uf8ff')
+        .get();
+
+    // Map each document's 'email' field to a List<String>
+    return snapshot.docs.map((doc) => doc['email'] as String).toList();
+  } catch (e) {
+    print('Error fetching matching emails: $e');
+    return [];
+  }
+}
+
+
 }

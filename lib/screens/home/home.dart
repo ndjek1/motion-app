@@ -1,11 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:motion_app/models/project.dart';
 import 'package:motion_app/screens/home/invitations_list.dart';
 import 'package:motion_app/screens/home/new_project.dart';
 import 'package:motion_app/screens/home/profile.dart';
 import 'package:motion_app/screens/home/project_view.dart';
-import 'package:motion_app/screens/shared.dart';
 import 'package:motion_app/services/auth.dart';
 import 'package:motion_app/services/database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -19,9 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final AuthService _auth = AuthService();
-  List<Project> _projects = [];
-  List<Project> _invitedProjects = [];
-  bool _isFreeUser = true; // Default to free user
+// Default to free user
   User? user = FirebaseAuth.instance.currentUser;
 
   @override
