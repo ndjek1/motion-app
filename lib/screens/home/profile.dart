@@ -11,6 +11,10 @@ class ProfileWidget extends StatefulWidget {
 
 class _ProfileWidgetState extends State<ProfileWidget> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+
   final User? user = FirebaseAuth.instance.currentUser;
   bool _isLoading = false;
   String? _errorMessage;
@@ -22,7 +26,6 @@ class _ProfileWidgetState extends State<ProfileWidget> {
     _loadUserData();
   }
 
-  // Load the current user data (display name and avatar URL) from Firestore
   Future<void> _loadUserData() async {
     setState(() {
       _isLoading = true;
@@ -47,7 +50,6 @@ class _ProfileWidgetState extends State<ProfileWidget> {
     });
   }
 
-  // Update the display name in Firestore
   Future<void> _updateDisplayName() async {
     if (_nameController.text.isEmpty) {
       setState(() {
@@ -81,7 +83,35 @@ class _ProfileWidgetState extends State<ProfileWidget> {
     });
   }
 
-  // Function to generate user initials if no profile image is available
+  Future<void> _changePassword() async {
+    if (_newPasswordController.text.isEmpty ||
+        _currentPasswordController.text.isEmpty) {
+      setState(() {
+        _errorMessage = "Please fill in all password fields.";
+      });
+      return;
+    }
+
+    try {
+      // Re-authenticate the user
+      final credential = EmailAuthProvider.credential(
+        email: user!.email!,
+        password: _currentPasswordController.text,
+      );
+      await user!.reauthenticateWithCredential(credential);
+
+      // Update the password
+      await user!.updatePassword(_newPasswordController.text);
+      setState(() {
+        _errorMessage = "Password updated successfully!";
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = "Failed to update password. ${e.toString()}";
+      });
+    }
+  }
+
   String _getUserInitials(String displayName) {
     List<String> names = displayName.split(" ");
     String initials = "";
@@ -97,6 +127,8 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   @override
   void dispose() {
     _nameController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
     super.dispose();
   }
 
@@ -111,52 +143,49 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         backgroundColor: Colors.grey[800],
         foregroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (_isLoading) ...[
-              const Center(child: CircularProgressIndicator()),
-              const SizedBox(height: 20),
-            ] else ...[
-              // Profile avatar
-              CircleAvatar(
-                radius: 50,
-                backgroundImage: _profileImageUrl != null
-                    ? NetworkImage(_profileImageUrl!)
-                    : null,
-                backgroundColor: Colors.indigo[100],
-                child: _profileImageUrl == null
-                    ? Text(
-                        _getUserInitials(_nameController.text.isEmpty
-                            ? 'User'
-                            : _nameController.text),
-                        style:
-                            const TextStyle(fontSize: 40, color: Colors.indigo),
-                      )
-                    : null,
-              ),
-              const SizedBox(height: 10),
-              // User email display
-              Text(
-                user?.email ?? 'No Email',
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              const SizedBox(height: 20),
-              // Display name input field
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Display Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_isLoading) ...[
+                const Center(child: CircularProgressIndicator()),
+                const SizedBox(height: 20),
+              ] else ...[
+                CircleAvatar(
+                  radius: 50,
+                  backgroundImage: _profileImageUrl != null
+                      ? NetworkImage(_profileImageUrl!)
+                      : null,
+                  backgroundColor: Colors.indigo[100],
+                  child: _profileImageUrl == null
+                      ? Text(
+                          _getUserInitials(_nameController.text.isEmpty
+                              ? 'User'
+                              : _nameController.text),
+                          style: const TextStyle(
+                              fontSize: 40, color: Colors.indigo),
+                        )
+                      : null,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  user?.email ?? 'No Email',
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Display Name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              // Save button
-              ElevatedButton(
+                const SizedBox(height: 20),
+                ElevatedButton(
                   onPressed: _updateDisplayName,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.indigo[600],
@@ -171,20 +200,67 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                     style: TextStyle(
                       color: Colors.white,
                     ),
-                  )),
-              const SizedBox(height: 10),
-              // Display success or error message
-              if (_errorMessage != null)
-                Text(
-                  _errorMessage!,
-                  style: TextStyle(
-                    color: _errorMessage == "Display name updated successfully!"
-                        ? Colors.green
-                        : Colors.red,
                   ),
                 ),
-            ]
-          ],
+                const SizedBox(height: 30),
+                const Text(
+                  "Change Password",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                TextField(
+                  controller: _currentPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'Current Password',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  obscureText: true,
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _newPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'New Password',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  obscureText: true,
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: _changePassword,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: const Text(
+                    'Change Password',
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (_errorMessage != null)
+                  Text(
+                    _errorMessage!,
+                    style: TextStyle(
+                      color: _errorMessage ==
+                                  "Display name updated successfully!" ||
+                              _errorMessage == "Password updated successfully!"
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+                  ),
+              ]
+            ],
+          ),
         ),
       ),
     );

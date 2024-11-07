@@ -2,8 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:motion_app/models/project.dart';
+import 'package:motion_app/models/user.dart';
 import 'package:motion_app/screens/home/comment.dart';
 import 'package:motion_app/screens/home/invitation.dart';
+import 'package:motion_app/screens/home/task_form.dart';
 import 'package:motion_app/services/database.dart';
 
 class ProjectDetailsWidget extends StatefulWidget {
@@ -262,6 +264,8 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                     ElevatedButton.icon(
                       onPressed: () {
                         // Task form action here
+                        _showTaskForm(context, project.id);
+                        print(project.id);
                       },
                       icon: const Icon(Icons.add, color: Colors.white),
                       label: const Text(
@@ -280,6 +284,45 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
             ),
           );
         }
+      },
+    );
+  }
+
+  void _showTaskForm(BuildContext context, String projectId,
+      {Task? task}) async {
+    List<MyUser> collaborators =
+        await DatabaseService(uid: user!.uid).fetchCollaborators(projectId);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: TaskForm(
+            onSubmitTask: (Task editedTask) {
+              // If task is provided, update the task; otherwise, create a new task
+              if (task != null) {
+                DatabaseService(uid: user!.uid).updateTaskData(
+                  editedTask.id,
+                  editedTask.title,
+                  editedTask.description,
+                  projectId,
+                  editedTask.assignedTo,
+                  editedTask.status,
+                  editedTask.createdAt,
+                  editedTask.dueDate,
+                );
+              } else {
+                // For creating a new task
+              }
+            },
+            collaborators: collaborators,
+            task: task,
+            project_id: projectId, // Pass the task for editing
+          ),
+        );
       },
     );
   }

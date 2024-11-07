@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:motion_app/models/project.dart';
 import 'package:motion_app/screens/home/invitations_list.dart';
 import 'package:motion_app/screens/home/new_project.dart';
+import 'package:motion_app/screens/home/privacy_terms_of_use.dart';
 import 'package:motion_app/screens/home/profile.dart';
 import 'package:motion_app/screens/home/project_view.dart';
+import 'package:motion_app/screens/home/settings.dart';
 import 'package:motion_app/services/auth.dart';
 import 'package:motion_app/services/database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -48,67 +50,24 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(
               fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white),
         ),
-        leading: PopupMenuButton<int>(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onSelected: (value) {
-            if (value == 1) {
+        leading: IconButton(
+            onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ProfileWidget()),
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
               );
-            } else if (value == 2) {
-              print("Privacy selected");
-            } else if (value == 3) {
+            },
+            icon: const Icon(Icons.settings)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications, color: Colors.white),
+            onPressed: () async {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => InvitationListWidget()),
               );
-            }
-          },
-          itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
-            const PopupMenuItem<int>(
-              value: 1,
-              child: Row(
-                children: [
-                  Icon(Icons.person, color: Colors.grey),
-                  SizedBox(width: 8),
-                  Text('Profile'),
-                ],
-              ),
-            ),
-            const PopupMenuItem<int>(
-              value: 2,
-              child: Row(
-                children: [
-                  Icon(Icons.lock, color: Colors.grey),
-                  SizedBox(width: 8),
-                  Text('Privacy'),
-                ],
-              ),
-            ),
-            const PopupMenuItem<int>(
-              value: 3,
-              child: Row(
-                children: [
-                  Icon(Icons.notifications, color: Colors.grey),
-                  SizedBox(width: 8),
-                  Text('Notifications'),
-                ],
-              ),
-            ),
-            const PopupMenuItem<int>(
-              value: 3,
-              child: Row(
-                children: [
-                  Icon(Icons.settings, color: Colors.grey),
-                  SizedBox(width: 8),
-                  Text('Settings'),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () async {
@@ -250,9 +209,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   value: 2,
                   child: Row(
                     children: [
-                      Icon(Icons.archive, color: Colors.grey),
+                      Icon(Icons.done_all_sharp, color: Colors.grey),
                       SizedBox(width: 8),
-                      Text('Archive'),
+                      Text('Completed'),
                     ],
                   ),
                 ),
@@ -309,7 +268,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (projects.isEmpty) {
       return _buildEmptyState('No invited projects yet.');
     }
-
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),

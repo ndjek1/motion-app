@@ -9,10 +9,11 @@ class TaskForm extends StatefulWidget {
   final Function(Task) onSubmitTask;
   final List<MyUser> collaborators;
   final Task? task; // Task to edit, or null if creating a new task
+  final String project_id; //
   final User? user = FirebaseAuth.instance.currentUser;
 
   TaskForm(
-      {required this.onSubmitTask, required this.collaborators, this.task});
+      {required this.onSubmitTask, required this.collaborators, this.task, required this.project_id});
 
   @override
   _TaskFormState createState() => _TaskFormState();
@@ -121,8 +122,7 @@ class _TaskFormState extends State<TaskForm> {
                         id: widget.task?.id ?? DateTime.now().toString(),
                         title: _title,
                         description: _description,
-                        projectId: widget.task?.projectId ??
-                            'project_id', // Ensure projectId is set
+                        projectId: widget.project_id, // Ensure projectId is set
                         assignedTo: _assignedTo,
                         status: _status,
                         dueDate: _dueDate,
@@ -251,7 +251,7 @@ class _TaskFormState extends State<TaskForm> {
 
 // Usage Example
 void showTaskForm(BuildContext context, Function(Task) onSubmitTask,
-    List<MyUser> collaborators,
+    List<MyUser> collaborators,String project_id,
     {Task? task}) {
   showModalBottomSheet(
     context: context,
@@ -260,6 +260,7 @@ void showTaskForm(BuildContext context, Function(Task) onSubmitTask,
       onSubmitTask: onSubmitTask,
       collaborators: collaborators,
       task: task,
+      project_id: project_id,
     ),
   );
 }

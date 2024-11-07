@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:motion_app/main.dart';
@@ -7,6 +9,8 @@ import 'package:motion_app/screens/home/invitations_list.dart';
 
 class PushNotification {
   final _firebaseMessaging = FirebaseMessaging.instance;
+  // Default to free user
+  User? user = FirebaseAuth.instance.currentUser;
 
   final AndroidNotificationChannel _androidChannel =
       const AndroidNotificationChannel(
@@ -36,6 +40,12 @@ class PushNotification {
     await _firebaseMessaging.requestPermission();
     final FCMToken = await _firebaseMessaging.getToken();
     print("Token: $FCMToken");
+      if (FCMToken != null) {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .update({'fcmToken': FCMToken});
+  }
     initPushNotifications();
     initLocalNotifications();
   }

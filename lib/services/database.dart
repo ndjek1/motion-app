@@ -48,7 +48,7 @@ class DatabaseService {
         'projectId': uid,
         'title': title,
         'description': description,
-        'dueDate':dueDate,
+        'dueDate': dueDate,
         'ownerId': ownerId,
         'createdAt': createdAt,
         'updatedAt': updatedAt,
@@ -62,32 +62,30 @@ class DatabaseService {
   }
 
   Future<void> archiveProject(String projectId) async {
-  await projectCollection.doc(projectId).update({'isArchived': true});
-}
-
-
- Future<String?> deleteProject(String projectId) async {
-  try {
-    
-    // Query to find the task by its ID
-    DocumentSnapshot projectSnapshot = await projectCollection.doc(projectId).get();
-
-    if (projectSnapshot.exists) {
-      // If the task exists, delete it
-      await projectCollection.doc(projectId).delete();
-      
-      // Optionally, return a success message or the task ID
-      return "Task with ID $projectId deleted successfully.";
-    } else {
-      throw Exception("Task not found.");
-    }
-  } catch (e) {
-    // Handle any errors
-    print('Error deleting task: $e');
-    return null;
+    await projectCollection.doc(projectId).update({'isArchived': true});
   }
-}
 
+  Future<String?> deleteProject(String projectId) async {
+    try {
+      // Query to find the task by its ID
+      DocumentSnapshot projectSnapshot =
+          await projectCollection.doc(projectId).get();
+
+      if (projectSnapshot.exists) {
+        // If the task exists, delete it
+        await projectCollection.doc(projectId).delete();
+
+        // Optionally, return a success message or the task ID
+        return "Task with ID $projectId deleted successfully.";
+      } else {
+        throw Exception("Task not found.");
+      }
+    } catch (e) {
+      // Handle any errors
+      print('Error deleting task: $e');
+      return null;
+    }
+  }
 
   Future<void> updateTaskData(
     String? id,
@@ -182,6 +180,7 @@ class DatabaseService {
       // Query to get projects where ownerId matches the current user ID
       QuerySnapshot querySnapshot = await projectCollection
           .where('ownerId', isEqualTo: currentUserId)
+          .where('isArchived', isEqualTo: false) //
           .get();
 
       // Convert the documents to a list of Project objects
@@ -201,6 +200,7 @@ class DatabaseService {
     try {
       QuerySnapshot querySnapshot = await projectCollection
           .where('collaboratorIds', arrayContains: currentUserId)
+          .where('isArchived', isEqualTo: false) //
           .get();
 
       List<Project> invitedProjects = querySnapshot.docs.map((doc) {
@@ -218,6 +218,7 @@ class DatabaseService {
     return projectCollection
         .where('ownerId',
             isEqualTo: uid) // Assuming you're filtering by the user
+        .where('isArchived', isEqualTo: false) //
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) =>
@@ -225,10 +226,11 @@ class DatabaseService {
             .toList());
   }
 
-    Stream<List<Project>> getInvitedProjectStream(String uid) {
+  Stream<List<Project>> getInvitedProjectStream(String uid) {
     return projectCollection
         .where('collaboratorIds',
             arrayContains: uid) // Assuming you're filtering by the user
+        .where('isArchived', isEqualTo: false) //
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) =>
@@ -252,8 +254,10 @@ class DatabaseService {
       // Reference to the projects collection
 
       // Query to get projects where ownerId matches the current user ID
-      QuerySnapshot querySnapshot =
-          await tasksCollection.where('projectId', isEqualTo: projectId).get();
+      QuerySnapshot querySnapshot = await tasksCollection
+          .where('projectId', isEqualTo: projectId)
+          .orderBy('dueDate')
+          .get();
 
       // Convert the documents to a list of Project objects
       List<Task> projectTasks = querySnapshot.docs.map((doc) {
@@ -415,31 +419,30 @@ class DatabaseService {
     }
   }
 
+  Future<String?> deleteTask(String taskId) async {
+    try {
+      // Assuming your task data is stored in a 'tasks' collection
+      CollectionReference tasksCollection =
+          FirebaseFirestore.instance.collection('tasks');
 
- Future<String?> deleteTask(String taskId) async {
-  try {
-    // Assuming your task data is stored in a 'tasks' collection
-    CollectionReference tasksCollection = FirebaseFirestore.instance.collection('tasks');
+      // Query to find the task by its ID
+      DocumentSnapshot taskSnapshot = await tasksCollection.doc(taskId).get();
 
-    // Query to find the task by its ID
-    DocumentSnapshot taskSnapshot = await tasksCollection.doc(taskId).get();
+      if (taskSnapshot.exists) {
+        // If the task exists, delete it
+        await tasksCollection.doc(taskId).delete();
 
-    if (taskSnapshot.exists) {
-      // If the task exists, delete it
-      await tasksCollection.doc(taskId).delete();
-      
-      // Optionally, return a success message or the task ID
-      return "Task with ID $taskId deleted successfully.";
-    } else {
-      throw Exception("Task not found.");
+        // Optionally, return a success message or the task ID
+        return "Task with ID $taskId deleted successfully.";
+      } else {
+        throw Exception("Task not found.");
+      }
+    } catch (e) {
+      // Handle any errors
+      print('Error deleting task: $e');
+      return null;
     }
-  } catch (e) {
-    // Handle any errors
-    print('Error deleting task: $e');
-    return null;
   }
-}
-
 
   Future<String?> getUserNameById(String uid) async {
     try {
@@ -461,7 +464,8 @@ class DatabaseService {
   Future<double> calculateProjectProgress(String projectId) async {
     try {
       // Fetch all tasks related to the project
-      QuerySnapshot querySnapshot = await tasksCollection.where('projectId', isEqualTo: projectId).get();
+      QuerySnapshot querySnapshot =
+          await tasksCollection.where('projectId', isEqualTo: projectId).get();
 
       // Get total number of tasks
       int totalTasks = querySnapshot.docs.length;
@@ -473,7 +477,8 @@ class DatabaseService {
       // Count the number of completed tasks
       int completedTasks = querySnapshot.docs.where((doc) {
         Map<String, dynamic> taskData = doc.data() as Map<String, dynamic>;
-        return taskData['status'] == 'Completed'; // Assuming 'status' is a field in your tasks collection
+        return taskData['status'] ==
+            'Completed'; // Assuming 'status' is a field in your tasks collection
       }).length;
 
       // Calculate progress percentage
@@ -486,22 +491,19 @@ class DatabaseService {
     }
   }
 
-
   Future<List<String>> getMatchingUserEmails(String query) async {
-  try {
-    // Retrieve matching emails based on the query
-    final snapshot = await userCollection
-        .where('email', isGreaterThanOrEqualTo: query)
-        .where('email', isLessThanOrEqualTo: query + '\uf8ff')
-        .get();
+    try {
+      // Retrieve matching emails based on the query
+      final snapshot = await userCollection
+          .where('email', isGreaterThanOrEqualTo: query)
+          .where('email', isLessThanOrEqualTo: query + '\uf8ff')
+          .get();
 
-    // Map each document's 'email' field to a List<String>
-    return snapshot.docs.map((doc) => doc['email'] as String).toList();
-  } catch (e) {
-    print('Error fetching matching emails: $e');
-    return [];
+      // Map each document's 'email' field to a List<String>
+      return snapshot.docs.map((doc) => doc['email'] as String).toList();
+    } catch (e) {
+      print('Error fetching matching emails: $e');
+      return [];
+    }
   }
-}
-
-
 }

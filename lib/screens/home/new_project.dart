@@ -37,91 +37,97 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
       appBar: AppBar(
         title: const Text('Create New Project'),
         backgroundColor: Colors.grey[850],
+        foregroundColor: Colors.white,
         elevation: 2,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildCardField(
-                label: 'Project Title',
-                hint: 'Enter project title',
-                onSaved: (value) => _title = value!,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a project title';
-                  }
-                  return null;
-                },
-              ),
-              _buildCardField(
-                label: 'Project Description',
-                hint: 'Enter project description',
-                onSaved: (value) => _description = value!,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a project description';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              _buildDatePicker(
-                label: 'Due Date',
-                selectedDate: _dueDate,
-                onDatePicked: (pickedDate) {
-                  setState(() {
-                    _dueDate = pickedDate!;
-                  });
-                },
-              ),
-              const Spacer(),
-              Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 12),
-                  ),
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      _formKey.currentState!.save();
-                      String projectId = _uuid.v4();
-                      DateTime createdAt = DateTime.now();
-                      Project newProject = Project(
-                        id: projectId,
-                        title: _title,
-                        description: _description,
-                        isArchived: false,
-                      );
-
-                      DatabaseService(uid: user!.uid).updateProjectData(
-                          projectId,
-                          _title,
-                          _description,
-                          _dueDate,
-                          user!.uid,
-                          createdAt.toString(),
-                          null,
-                          false,
-                          null,
-                          null);
-                      Navigator.pop(context, newProject);
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCardField(
+                  label: 'Project Title',
+                  hint: 'Enter project title',
+                  onSaved: (value) => _title = value!,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a project title';
                     }
+                    return null;
                   },
-                  child: const Text(
-                    'Create Project',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                _buildCardField(
+                  label: 'Project Description',
+                  hint: 'Enter project description',
+                  onSaved: (value) => _description = value!,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a project description';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                _buildDatePicker(
+                  label: 'Due Date',
+                  selectedDate: _dueDate,
+                  onDatePicked: (pickedDate) {
+                    setState(() {
+                      _dueDate = pickedDate!;
+                    });
+                  },
+                ),
+                const SizedBox(height: 20),
+                Center(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[600],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 30, vertical: 12),
+                    ),
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
+                        _formKey.currentState!.save();
+                        String projectId = _uuid.v4();
+                        DateTime createdAt = DateTime.now();
+                        Project newProject = Project(
+                          id: projectId,
+                          title: _title,
+                          description: _description,
+                          isArchived: false,
+                        );
+
+                        DatabaseService(uid: user!.uid).updateProjectData(
+                            projectId,
+                            _title,
+                            _description,
+                            _dueDate,
+                            user!.uid,
+                            createdAt.toString(),
+                            null,
+                            false,
+                            null,
+                            null);
+                        Navigator.pop(context, newProject);
+                      }
+                    },
+                    child: const Text(
+                      'Create Project',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -175,7 +181,7 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
             decoration: InputDecoration(
               labelText: label,
               suffixIcon: IconButton(
-                icon: Icon(Icons.calendar_today, color: Colors.indigo),
+                icon: Icon(Icons.calendar_today, color: Colors.grey),
                 onPressed: () async {
                   DateTime? pickedDate = await showDatePicker(
                     context: context,
