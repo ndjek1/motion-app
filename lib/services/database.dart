@@ -107,6 +107,7 @@ class DatabaseService {
         'assignedTo': assignedTo,
         'createdAt': createdAt,
         'status': status,
+        // ignore: equal_keys_in_map
         'dueDate': dueDate,
       });
       print('Task added');
@@ -181,6 +182,30 @@ class DatabaseService {
       QuerySnapshot querySnapshot = await projectCollection
           .where('ownerId', isEqualTo: currentUserId)
           .where('isArchived', isEqualTo: false) //
+          .get();
+
+      // Convert the documents to a list of Project objects
+      List<Project> userProjects = querySnapshot.docs.map((doc) {
+        return Project.fromFirestore(doc.data() as Map<String, dynamic>);
+      }).toList();
+      print(" project id ${userProjects[0].id} ");
+
+      return userProjects;
+    } catch (e) {
+      print('Error fetching user projects: $e');
+      return [];
+    }
+  }
+
+
+  Future<List<Project>> getUserCompletedProjects() async {
+    try {
+      // Reference to the projects collection
+
+      // Query to get projects where ownerId matches the current user ID
+      QuerySnapshot querySnapshot = await projectCollection
+          .where('ownerId', isEqualTo: uid)
+          .where('isArchived', isEqualTo: true) //
           .get();
 
       // Convert the documents to a list of Project objects

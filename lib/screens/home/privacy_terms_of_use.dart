@@ -48,7 +48,7 @@ class PrivacyPolicyContent extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           const Text(
-            'Last updated: [Date]\n\n'
+            'Last updated: Nov 6 2024\n\n'
             '1. Introduction\n'
             'CollabMate ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and protect your information when you use our app. By using our app, you agree to this Privacy Policy.\n\n'
             '2. Information We Collect\n'
@@ -90,7 +90,7 @@ class TermsOfUseContent extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           const Text(
-            'Last updated: [Date]\n\n'
+            'Last updated: Nov 6 2024\n\n'
             '1. Acceptance of Terms\n'
             'By using CollabMate, you agree to these Terms of Use. Please read them carefully.\n\n'
             '2. Description of Service\n'

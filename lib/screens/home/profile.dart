@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:motion_app/models/project.dart';
+import 'package:motion_app/services/database.dart';
 
 class ProfileWidget extends StatefulWidget {
   const ProfileWidget({Key? key}) : super(key: key);
@@ -19,11 +21,13 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   bool _isLoading = false;
   String? _errorMessage;
   String? _profileImageUrl;
+  List<Project> _projects = []; // List to hold the user's projects
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadUserProjects(); // Load projects on initialization
   }
 
   Future<void> _loadUserData() async {
@@ -48,6 +52,16 @@ class _ProfileWidgetState extends State<ProfileWidget> {
     setState(() {
       _isLoading = false;
     });
+  }
+
+  Future<void> _loadUserProjects() async {
+    try {
+      // Query the projects collection to find projects by the user
+      _projects =
+          await DatabaseService(uid: user!.uid).getUserCompletedProjects();
+    } catch (e) {
+      print("Failed to load projects: $e");
+    }
   }
 
   Future<void> _updateDisplayName() async {
@@ -246,6 +260,28 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 30),
+                // Achievements Section (Projects)
+                const Text(
+                  "Achievements",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                _projects.isEmpty
+                    ? const Text("No achievements yet.")
+                    : Column(
+                        children: _projects.map((project) {
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            child: ListTile(
+                              title: Text(project.title ),
+                              subtitle:
+                                  Text(project.description ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                const SizedBox(height: 30),
                 const SizedBox(height: 10),
                 if (_errorMessage != null)
                   Text(

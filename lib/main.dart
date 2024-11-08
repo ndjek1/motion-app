@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:motion_app/models/user.dart';
@@ -6,20 +7,31 @@ import 'package:motion_app/screens/wrapper.dart';
 import 'package:motion_app/services/auth.dart';
 import 'package:motion_app/services/notifications.dart';
 import 'package:provider/provider.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
 
 final navigatorKey = GlobalKey<NavigatorState>();
-void main() async {
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  await PushNotification().initNorifications();
+  tz.initializeTimeZones();
+
+  await initializeApp();
 
   runApp(const MyApp());
+}
+
+Future<void> initializeApp() async {
+  try {
+    await Firebase.initializeApp();
+    await PushNotification().initNotifications();
+  } catch (e) {
+    print('Error during app initialization: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return StreamProvider<MyUser?>.value(

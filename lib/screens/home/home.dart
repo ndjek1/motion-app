@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:motion_app/models/project.dart';
 import 'package:motion_app/screens/home/invitations_list.dart';
 import 'package:motion_app/screens/home/new_project.dart';
-import 'package:motion_app/screens/home/privacy_terms_of_use.dart';
-import 'package:motion_app/screens/home/profile.dart';
 import 'package:motion_app/screens/home/project_view.dart';
 import 'package:motion_app/screens/home/settings.dart';
 import 'package:motion_app/services/auth.dart';

@@ -154,7 +154,7 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                       },
                     ),
                     const Text(
-                      'Tasks',
+                      'Activities',
                       style:
                           TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
@@ -261,25 +261,20 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // Task form action here
-                        _showTaskForm(context, project.id);
-                        print(project.id);
-                      },
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      label: const Text(
-                        "Add Activity",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 16),
-                        backgroundColor: Colors.grey[800],
-                      ),
-                    ),
                   ],
                 ),
+              ),
+            ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                // Task form action here
+                _showTaskForm(context, project.id);
+                print(project.id);
+              },
+              backgroundColor: Colors.grey[700], // Neutral dark grey for FAB
+              child: const Icon(
+                Icons.add,
+                color: Colors.white,
               ),
             ),
           );

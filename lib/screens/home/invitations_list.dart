@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:motion_app/models/project.dart';
 import 'package:motion_app/services/database.dart';
 
+// ignore: must_be_immutable
 class InvitationListWidget extends StatefulWidget {
   @override
+  // ignore: library_private_types_in_public_api
   _InvitationListWidgetState createState() => _InvitationListWidgetState();
 
   User? user = FirebaseAuth.instance.currentUser;
@@ -16,9 +18,9 @@ class InvitationListWidget extends StatefulWidget {
 class _InvitationListWidgetState extends State<InvitationListWidget> {
   List<Invitation> _invitations = [];
   List<Invitation> _sentInvitations = [];
-  Map<String, String> _senderNames = {};
-  Map<String, String> _receiverNames = {};
-  List<Map<String, dynamic>> _notifications = [];
+  final Map<String, String> _senderNames = {};
+  final Map<String, String> _receiverNames = {};
+  final List<Map<String, dynamic>> _notifications = [];
 
   @override
   void initState() {
