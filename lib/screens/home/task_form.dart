@@ -13,7 +13,10 @@ class TaskForm extends StatefulWidget {
   final User? user = FirebaseAuth.instance.currentUser;
 
   TaskForm(
-      {required this.onSubmitTask, required this.collaborators, this.task, required this.project_id});
+      {required this.onSubmitTask,
+      required this.collaborators,
+      this.task,
+      required this.project_id});
 
   @override
   _TaskFormState createState() => _TaskFormState();
@@ -52,7 +55,7 @@ class _TaskFormState extends State<TaskForm> {
                 child: Text(
                   widget.task == null ? 'Create Activity' : 'Edit Activity',
                   style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      fontWeight: FontWeight.bold, color: Colors.indigo),
+                      fontWeight: FontWeight.bold, color: Colors.grey[700]),
                 ),
               ),
               const SizedBox(height: 20),
@@ -89,8 +92,10 @@ class _TaskFormState extends State<TaskForm> {
               ),
               _buildDropdown(
                 label: 'Status',
-                value: _status,
-                items: ['Pending', 'inProgress', 'Completed'].map((status) {
+                value: ['Pending', 'inProgress', 'completed'].contains(_status)
+                    ? _status
+                    : 'Pending', // Default to 'Pending' if invalid
+                items: ['Pending', 'inProgress', 'completed'].map((status) {
                   return DropdownMenuItem<String>(
                     value: status,
                     child: Text(status),
@@ -150,7 +155,7 @@ class _TaskFormState extends State<TaskForm> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    backgroundColor: Colors.indigo, // Set the button color
+                    backgroundColor: Colors.grey[700], // Set the button color
                   ),
                   child: Text(
                     widget.task == null ? 'Create Activity' : 'Update Activity',
@@ -224,7 +229,7 @@ class _TaskFormState extends State<TaskForm> {
         decoration: InputDecoration(
           labelText: label,
           suffixIcon: IconButton(
-            icon: Icon(Icons.calendar_today, color: Colors.indigo),
+            icon: Icon(Icons.calendar_today, color: Colors.grey[700]),
             onPressed: () async {
               DateTime? pickedDate = await showDatePicker(
                 context: context,
@@ -251,7 +256,7 @@ class _TaskFormState extends State<TaskForm> {
 
 // Usage Example
 void showTaskForm(BuildContext context, Function(Task) onSubmitTask,
-    List<MyUser> collaborators,String project_id,
+    List<MyUser> collaborators, String project_id,
     {Task? task}) {
   showModalBottomSheet(
     context: context,

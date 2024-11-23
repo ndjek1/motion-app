@@ -485,36 +485,24 @@ class DatabaseService {
     }
   }
 
-  // Function to calculate project progress percentage
-  Future<double> calculateProjectProgress(String projectId) async {
-    try {
-      // Fetch all tasks related to the project
-      QuerySnapshot querySnapshot =
-          await tasksCollection.where('projectId', isEqualTo: projectId).get();
+  
+  Stream<double> fetchProjectProgressStream(String projectId) {
+  return tasksCollection
+      .where('projectId', isEqualTo: projectId)
+      .snapshots()
+      .map((snapshot) {
+    int totalTasks = snapshot.docs.length;
+    int completedTasks = snapshot.docs
+        .where((doc) => doc['status'] == 'Completed')
+        .length;
 
-      // Get total number of tasks
-      int totalTasks = querySnapshot.docs.length;
-
-      if (totalTasks == 0) {
-        return 0.0; // Return 0 if there are no tasks
-      }
-
-      // Count the number of completed tasks
-      int completedTasks = querySnapshot.docs.where((doc) {
-        Map<String, dynamic> taskData = doc.data() as Map<String, dynamic>;
-        return taskData['status'] ==
-            'Completed'; // Assuming 'status' is a field in your tasks collection
-      }).length;
-
-      // Calculate progress percentage
-      double progressPercentage = (completedTasks / totalTasks) * 100;
-
-      return progressPercentage;
-    } catch (e) {
-      print("Error calculating progress: $e");
-      return 0.0;
+    if (totalTasks == 0) {
+      return 0.0; // Avoid division by zero
     }
-  }
+    return (completedTasks / totalTasks) * 100;
+  });
+}
+
 
   Future<List<String>> getMatchingUserEmails(String query) async {
     try {

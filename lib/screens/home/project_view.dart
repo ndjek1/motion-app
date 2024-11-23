@@ -5,6 +5,7 @@ import 'package:motion_app/models/project.dart';
 import 'package:motion_app/models/user.dart';
 import 'package:motion_app/screens/home/comment.dart';
 import 'package:motion_app/screens/home/invitation.dart';
+import 'package:motion_app/screens/home/new_project.dart';
 import 'package:motion_app/screens/home/task_form.dart';
 import 'package:motion_app/services/database.dart';
 
@@ -27,11 +28,6 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
         .doc(widget.projectId)
         .get();
     return Project.fromDocument(doc);
-  }
-
-  Future<double> fetchProjectProgress() async {
-    return await DatabaseService(uid: user!.uid)
-        .calculateProjectProgress(widget.projectId);
   }
 
   @override
@@ -100,8 +96,9 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                           const TextStyle(fontSize: 16, color: Colors.black54),
                     ),
                     const SizedBox(height: 16),
-                    FutureBuilder<double>(
-                      future: fetchProjectProgress(),
+                    StreamBuilder<double>(
+                      stream: DatabaseService(uid: user!.uid)
+                          .fetchProjectProgressStream(widget.projectId),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -207,7 +204,19 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                                           icon: const Icon(Icons.more_vert,
                                               color: Colors.grey),
                                           onSelected: (value) async {
-                                            // Handle actions here
+                                            if (value == 1) {
+                                              _showTaskForm(context, project.id,
+                                                  task: task);
+                                            } else if (value == 2) {
+                                              await DatabaseService(
+                                                      uid: user!.uid)
+                                                  .updateTaskStatus(
+                                                      task.id, "Completed");
+                                            } else if (value == 3) {
+                                              await DatabaseService(
+                                                      uid: user!.uid)
+                                                  .deleteTask(task.id);
+                                            }
                                           },
                                           itemBuilder: (BuildContext context) =>
                                               <PopupMenuEntry<int>>[
@@ -311,6 +320,7 @@ class _ProjectDetailsWidgetState extends State<ProjectDetailsWidget> {
                 );
               } else {
                 // For creating a new task
+                NewProjectScreen();
               }
             },
             collaborators: collaborators,
